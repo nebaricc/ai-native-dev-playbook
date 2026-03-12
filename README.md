@@ -612,7 +612,7 @@ These are from applying the playbook across three production codebases. Every le
 
 ```bash
 # Clone the playbook
-git clone https://github.com/your-org/ai-native-playbook.git /tmp/ai-native-playbook
+git clone https://github.com/nebaricc/ai-native-dev-playbook.git /tmp/ai-native-playbook
 
 # Copy templates to your project
 cp /tmp/ai-native-playbook/templates/CLAUDE.md.template ./CLAUDE.md
