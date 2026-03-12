@@ -1,0 +1,132 @@
+# {PROJECT} -- Cursor Rules
+# This file mirrors CLAUDE.md for Cursor compatibility.
+# See CLAUDE.md for the canonical reference.
+
+# ============================================================
+# PROJECT OVERVIEW
+# ============================================================
+
+# {PROJECT_DESCRIPTION}
+#
+# Packages:
+#   {PACKAGE_1} ({PACKAGE_1_PATH}) -- {PACKAGE_1_PURPOSE}
+#   {PACKAGE_2} ({PACKAGE_2_PATH}) -- {PACKAGE_2_PURPOSE}
+
+# ============================================================
+# COMMANDS
+# ============================================================
+
+# {PACKAGE_MANAGER} install            Install dependencies
+# {PACKAGE_MANAGER} run dev            Start dev server
+# {PACKAGE_MANAGER} run build          Production build
+# {PACKAGE_MANAGER} run test           Run unit tests
+# {PACKAGE_MANAGER} run test:e2e       Run E2E tests
+# {PACKAGE_MANAGER} run lint           Lint (ESLint)
+# {PACKAGE_MANAGER} run lint --fix     Lint with auto-fix
+# {PACKAGE_MANAGER} run type-check     TypeScript type checking
+# {PACKAGE_MANAGER} run format         Format (Prettier)
+
+# ============================================================
+# GIT CONVENTIONS
+# ============================================================
+
+# Commits: Conventional Commits -- type(scope): description
+#   Types: feat, fix, refactor, test, docs, chore, ci, style, perf
+# Branches: {TICKET_PREFIX}-123-short-description from {DEV_BRANCH}
+# PRs: Target {DEV_BRANCH}. Title: type(scope): description ({TICKET_PREFIX}-123)
+# No force pushes. No git add . -- commit specific files.
+# PR size: Keep under 10 files changed. Split larger work into stacked PRs.
+
+# ============================================================
+# DEPLOYMENT PIPELINE
+# ============================================================
+
+# Development:  {DEV_BRANCH}      -> {DEV_URL}
+# Staging:      {STAGING_BRANCH}   -> {STAGING_URL}
+# Production:   {MAIN_BRANCH}      -> {PROD_URL}
+
+# ============================================================
+# CODE STYLE
+# ============================================================
+
+# TypeScript strict mode. No `any` -- use `unknown` + type guards.
+# Named exports only (no default exports).
+# Explicit return types on exported functions.
+# Errors: return Result<T, E> or throw typed errors -- never swallow silently.
+# Imports order: Node built-ins > external packages > internal aliases > relative paths.
+# Destructure props/params. Prefer const over let.
+# No console.log in production code -- use a structured logger.
+
+# ============================================================
+# ARCHITECTURE
+# ============================================================
+
+# Directory Structure:
+# {DIRECTORY_STRUCTURE}
+#
+# Key Patterns:
+#   - {PATTERN_1}
+#   - {PATTERN_2}
+#   - {PATTERN_3}
+#
+# State Management: {STATE_MANAGEMENT_APPROACH}
+# API Layer: {API_LAYER_APPROACH}
+
+# ============================================================
+# COMPONENT CONVENTIONS
+# ============================================================
+
+# File naming: PascalCase for components, camelCase for utilities.
+# One component per file. Co-locate styles and tests.
+# Props interfaces: prefix with component name (e.g., ButtonProps).
+# Extract reusable logic into hooks/composables.
+# Prefer composition over inheritance.
+
+# ============================================================
+# TESTING
+# ============================================================
+
+# All new code must have tests. Minimum coverage: {COVERAGE_THRESHOLD}%.
+# Unit tests: co-located as ComponentName.test.tsx or in __tests__/.
+# E2E tests: tests/e2e/ directory, organized by user flow.
+# Test naming: describe("ComponentName", () => { it("should ...") }).
+# Mock external dependencies, not internal modules.
+# Test behavior, not implementation details.
+
+# ============================================================
+# QUALITY STANDARDS
+# ============================================================
+
+# No lint warnings in changed files.
+# Type-check must pass with zero errors.
+# Tests must pass before pushing.
+# Visual regression baselines updated when UI changes.
+# No secrets or credentials in committed files.
+
+# ============================================================
+# AGENT BEHAVIOR RULES
+# ============================================================
+
+# 1.  Read CLAUDE.md and referenced skills before writing code.
+# 2.  Plan before coding -- outline approach, identify affected files.
+# 3.  Run lint + type-check + tests before every commit.
+# 4.  Commit specific files with conventional commit messages.
+# 5.  Never force push, never git add ., never skip pre-commit hooks.
+# 6.  Keep PRs under 10 files. Split into stacked PRs if larger.
+# 7.  Every source change ships with corresponding tests.
+# 8.  Track a change budget -- stop and reassess if exceeding scope.
+# 9.  Ask clarifying questions before making assumptions.
+# 10. Verify your own output -- check test results, build artifacts.
+
+# ============================================================
+# DEFINITION OF DONE
+# ============================================================
+
+# - Code compiles ({PACKAGE_MANAGER} run type-check)
+# - Lint passes ({PACKAGE_MANAGER} run lint)
+# - Tests pass ({PACKAGE_MANAGER} run test)
+# - New code has test coverage
+# - PR is under 10 files changed
+# - Commit messages follow conventional format
+# - No `any` types introduced
+# - PR description includes what/why and test plan

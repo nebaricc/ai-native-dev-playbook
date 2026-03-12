@@ -1,0 +1,125 @@
+---
+description: Conventions for API route handlers in apps/api
+globs: apps/api/pages/api/**/*.ts
+alwaysApply: false
+---
+
+# API Route Conventions
+
+## File Structure
+
+API routes live in `apps/api/pages/api/v1/`. Organize by resource:
+
+```
+pages/api/v1/
+  users/
+    index.ts          -- GET (list), POST (create)
+    [id].ts           -- GET (read), PATCH (update), DELETE (delete)
+    [id]/
+      sessions.ts     -- GET user sessions
+  teams/
+    index.ts
+    [id].ts
+    [id]/
+      members.ts
+```
+
+## Handler Pattern
+
+Every route handler follows this structure:
+
+```typescript
+import { withAuth } from "@/lib/middleware/auth";
+import { withErrorHandler } from "@/lib/middleware/errors";
+import { withRateLimit } from "@/lib/middleware/rate-limit";
+import { CreateUserRequest, CreateUserResponse } from "@acme/shared";
+import type { NextApiRequest, NextApiResponse } from "next";
+
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  switch (req.method) {
+    case "GET":
+      return handleGet(req, res);
+    case "POST":
+      return handlePost(req, res);
+    default:
+      res.setHeader("Allow", ["GET", "POST"]);
+      return res.status(405).json({
+        data: null,
+        error: { message: "Method not allowed", code: "METHOD_NOT_ALLOWED" },
+      });
+  }
+}
+
+export default withErrorHandler(withAuth(withRateLimit(handler)));
+```
+
+## Request Validation
+
+Always validate request bodies and query parameters with Zod schemas from `@acme/shared`:
+
+```typescript
+import { CreateUserRequest } from "@acme/shared";
+
+async function handlePost(req: NextApiRequest, res: NextApiResponse) {
+  const body = CreateUserRequest.parse(req.body);
+  // body is now fully typed and validated
+}
+```
+
+## Response Envelope
+
+All responses use a consistent envelope:
+
+```typescript
+// Success
+res.status(200).json({
+  data: { id: "usr_123", name: "Alice" },
+  error: null,
+  meta: { total: 42, page: 1, limit: 20 }, // optional, for paginated responses
+});
+
+// Error
+res.status(400).json({
+  data: null,
+  error: { message: "Email is required", code: "VALIDATION_ERROR" },
+});
+```
+
+## Authentication
+
+- Use `withAuth()` middleware for protected routes.
+- Access the authenticated user via `req.user` (added by middleware).
+- For public routes, omit `withAuth()` from the wrapper chain.
+- For routes needing specific roles: `withAuth({ roles: ["admin"] })`.
+
+## Pagination
+
+List endpoints support cursor-based pagination:
+
+```typescript
+const { cursor, limit = 20 } = PaginationParams.parse(req.query);
+const results = await userRepo.list({ cursor, limit: limit + 1 });
+const hasMore = results.length > limit;
+const items = hasMore ? results.slice(0, -1) : results;
+
+res.status(200).json({
+  data: items,
+  error: null,
+  meta: {
+    hasMore,
+    nextCursor: hasMore ? items[items.length - 1].id : null,
+  },
+});
+```
+
+## Error Codes
+
+Use `AppError` with standard codes:
+
+- `VALIDATION_ERROR` (400) -- invalid input
+- `UNAUTHORIZED` (401) -- missing or invalid auth
+- `FORBIDDEN` (403) -- insufficient permissions
+- `NOT_FOUND` (404) -- resource does not exist
+- `CONFLICT` (409) -- duplicate or state conflict
+- `RATE_LIMITED` (429) -- too many requests
+- `INTERNAL_ERROR` (500) -- unexpected server error

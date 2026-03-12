@@ -1,0 +1,68 @@
+---
+description: Rules for writing tests
+globs: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "tests/**/*"]
+---
+
+# Test Rules
+
+## Structure
+- Follow Arrange-Act-Assert (AAA) pattern in every test.
+- Use descriptive `describe` blocks matching the module/component name.
+- Use `it("should ...")` for individual test cases.
+- Group related tests under nested `describe` blocks for methods or behaviors.
+
+## Naming
+```typescript
+describe("UserService", () => {
+  describe("getUserById", () => {
+    it("should return the user when given a valid ID", () => { ... });
+    it("should throw NotFoundError when user does not exist", () => { ... });
+  });
+});
+```
+
+## What to Test
+- Happy path for all public functions and components.
+- Error cases and edge conditions (null, undefined, empty arrays, boundary values).
+- State transitions and side effects.
+- User interactions for UI components.
+- Integration points between modules.
+
+## What NOT to Test
+- Private/internal implementation details.
+- Third-party library behavior.
+- Trivial code with no logic (simple pass-through, getters).
+- Framework internals.
+
+## Mocking
+- Mock external dependencies (APIs, databases, file system).
+- Do NOT mock the module under test.
+- Prefer dependency injection over module-level mocking.
+- Reset mocks between tests (`beforeEach` / `afterEach`).
+- Use realistic test data -- not "foo", "bar", "test123".
+
+## Assertions
+- One logical assertion per test (multiple `expect` calls are fine if they assert one behavior).
+- Use specific matchers (`toEqual`, `toContain`, `toThrow`) over generic ones (`toBeTruthy`).
+- Assert on outcomes, not on how they were achieved.
+
+## Async Tests
+- Always `await` async operations. Never use `.then()` in tests.
+- Use `waitFor` or `findBy` for async UI updates.
+- Set reasonable timeouts for integration/E2E tests.
+
+## Test Data
+- Use factory functions or builders for complex test objects.
+- Keep test data close to the test that uses it.
+- Avoid sharing mutable state between tests.
+
+## Visual Regression
+- Screenshot tests go in `tests/visual/`.
+- Name screenshots descriptively: `component-name--state.png`.
+- Update baselines intentionally, never as a side effect.
+- Use consistent viewport sizes defined in the test config.
+
+## Coverage
+- Target {COVERAGE_THRESHOLD}% line coverage for new code.
+- Focus on meaningful coverage -- not vanity metrics.
+- Uncovered lines should be justified (e.g., unreachable error handlers).

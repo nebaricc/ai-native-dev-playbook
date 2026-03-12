@@ -1,0 +1,55 @@
+---
+description: Rules for building UI components
+globs: ["src/**/*.tsx", "src/**/*.vue", "src/**/*.svelte"]
+---
+
+# Component Rules
+
+## File Structure
+- One component per file. File name matches component name in PascalCase.
+- Co-locate component, styles, tests, and types in the same directory.
+- Barrel export via `index.ts` at the component directory level.
+
+## Props
+- Define props interfaces with the component name prefix: `{ComponentName}Props`.
+- Destructure props in the function signature.
+- Use explicit types -- no `any`.
+- Document non-obvious props with JSDoc comments.
+- Provide default values where sensible.
+
+## Component Design
+- Prefer composition over inheritance.
+- Keep components under 150 lines. Extract sub-components or hooks for longer ones.
+- Separate container (data/logic) from presentational (rendering) components.
+- Use hooks/composables for reusable stateful logic.
+
+## Naming
+- Components: PascalCase (`UserCard`, `SearchInput`).
+- Event handler props: prefix with `on` (`onClick`, `onSubmit`).
+- Event handler implementations: prefix with `handle` (`handleClick`, `handleSubmit`).
+- Boolean props: prefix with `is`, `has`, `should` (`isDisabled`, `hasError`).
+
+## Styling
+- Use the project's established styling approach ({STYLING_APPROACH}).
+- Avoid inline styles except for truly dynamic values.
+- Use design tokens / CSS variables for colors, spacing, typography.
+- Responsive: mobile-first, use defined breakpoints.
+
+## Accessibility
+- Use semantic HTML elements (`button` not `div` with onClick).
+- All interactive elements must be keyboard accessible.
+- Provide `aria-label` for icon-only buttons.
+- Ensure sufficient color contrast ratios.
+- Inputs must have associated labels.
+
+## Performance
+- Avoid unnecessary re-renders. Profile before memoizing.
+- Lazy-load components that are not above-the-fold.
+- Virtualize long lists (>100 items).
+- Avoid expensive computation in render. Move to hooks or memoize.
+
+## Testing
+- Test user-visible behavior, not implementation details.
+- Use testing-library queries that reflect how users interact (getByRole, getByText).
+- Cover: default render, user interactions, error states, loading states.
+- Mock external dependencies, not sibling components.

@@ -1,0 +1,170 @@
+name: CI Review
+
+on:
+  pull_request:
+    branches: ["{DEV_BRANCH}", "{MAIN_BRANCH}"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr-size-guard:
+    name: PR Size Guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Count changed files
+        id: count
+        run: |
+          FILE_COUNT=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l | tr -d ' ')
+          echo "file_count=$FILE_COUNT" >> "$GITHUB_OUTPUT"
+          echo "Changed files: $FILE_COUNT"
+
+      - name: Warn on large PR
+        if: steps.count.outputs.file_count > 10
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const count = ${{ steps.count.outputs.file_count }};
+            const marker = '<!-- pr-size-warning -->';
+            const body = `${marker}\n**PR Size Warning**: This PR changes ${count} files. Consider splitting into smaller PRs (target: under 10 files) for faster review.`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Block oversized PR
+        if: steps.count.outputs.file_count > 30
+        run: |
+          echo "::error::PR changes ${{ steps.count.outputs.file_count }} files (limit: 30). Please split into smaller PRs."
+          exit 1
+
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "{NODE_VERSION}"
+          cache: "{PACKAGE_MANAGER}"
+
+      - name: Install dependencies
+        run: {PACKAGE_MANAGER} install
+
+      - name: Type check
+        run: {PACKAGE_MANAGER} run type-check
+
+      - name: Lint
+        run: {PACKAGE_MANAGER} run lint
+
+      - name: Test with coverage
+        run: {PACKAGE_MANAGER} run test -- --coverage
+
+      - name: Coverage gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const threshold = {COVERAGE_THRESHOLD};
+
+            // Adjust this path based on your coverage reporter output
+            const coveragePath = 'coverage/coverage-summary.json';
+            if (!fs.existsSync(coveragePath)) {
+              core.warning('Coverage summary not found. Skipping coverage gate.');
+              return;
+            }
+
+            const coverage = JSON.parse(fs.readFileSync(coveragePath, 'utf8'));
+            const pct = coverage.total.lines.pct;
+
+            if (pct < threshold) {
+              core.setFailed(`Line coverage ${pct}% is below threshold ${threshold}%`);
+            } else {
+              core.info(`Line coverage ${pct}% meets threshold ${threshold}%`);
+            }
+
+  ai-review:
+    name: AI Review Comment
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened' || github.event.action == 'synchronize'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate review summary
+        id: review
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- ai-review-summary -->';
+
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            });
+
+            const additions = files.reduce((sum, f) => sum + f.additions, 0);
+            const deletions = files.reduce((sum, f) => sum + f.deletions, 0);
+            const fileList = files.map(f => `- \`${f.filename}\` (+${f.additions}/-${f.deletions})`).join('\n');
+
+            const body = [
+              marker,
+              `**PR Summary** (${files.length} files, +${additions}/-${deletions})`,
+              '',
+              fileList,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

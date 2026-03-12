@@ -1,0 +1,180 @@
+# Cursor Rules -- Meridian API (Django REST Framework)
+
+Read CLAUDE.md before starting any task. It contains project architecture,
+commands, and conventions that must be followed.
+
+## Project Structure
+
+```
+meridian/              -- Django project settings
+  settings/
+    base.py            -- Shared settings
+    development.py     -- Dev overrides
+    production.py      -- Production settings
+apps/
+  accounts/            -- Users, auth, profiles
+  organizations/       -- Orgs, membership, invitations
+  projects/            -- Projects, permissions
+  analytics/           -- Data ingestion, aggregation
+  notifications/       -- Email, webhook, in-app
+  core/                -- Base classes, mixins, utilities
+```
+
+## General Rules
+
+- Python 3.12. Use modern syntax: `match` statements, type hints with `|` union, f-strings.
+- Type hints on all function signatures. Use `from __future__ import annotations` at the top of every file.
+- No wildcard imports (`from module import *`). Always import explicitly.
+- Keep files under 300 lines. Split into modules when approaching the limit.
+- Docstrings on all public classes and functions (Google style).
+- Use `pathlib.Path` instead of `os.path` for file system operations.
+
+## Django Conventions
+
+- Custom user model: `apps.accounts.models.User`. Never import `django.contrib.auth.models.User`.
+- All apps registered under `apps/` directory with dotted path: `"apps.accounts"`.
+- Settings split by environment. Use `DJANGO_SETTINGS_MODULE=meridian.settings.development`.
+- Use `django.conf.settings` for accessing settings, never import settings modules directly.
+- URL patterns: app-level `urls.py` with DRF routers, included in root `meridian/urls.py`.
+
+## Model Conventions
+
+- Models inherit from `apps.core.models.BaseModel` which provides `id` (UUID), `created_at`, `updated_at`.
+- Use `verbose_name` and `verbose_name_plural` in `Meta`.
+- Define `__str__` on every model.
+- Related names: explicit and descriptive (`related_name="projects"`, not `related_name="+"`).
+- Indexes: define in `Meta.indexes` for fields used in filters and ordering.
+- Choices: use `TextChoices` or `IntegerChoices` classes, not tuples.
+
+```python
+class Project(BaseModel):
+    title = models.CharField(max_length=200)
+    status = models.CharField(max_length=20, choices=ProjectStatus.choices, default=ProjectStatus.DRAFT)
+    org = models.ForeignKey("organizations.Organization", on_delete=models.CASCADE, related_name="projects")
+```
+
+## View Conventions (DRF)
+
+- Use `ModelViewSet` for full CRUD resources. Use `GenericAPIView` for custom endpoints.
+- One ViewSet per file in `views/` directory.
+- Always define `permission_classes`, `serializer_class`, and `filterset_class`.
+- Override `get_queryset()` for org-scoping, never `queryset` class attribute.
+- Business logic lives in `services.py`, not in views or serializers.
+
+```python
+class ProjectViewSet(OrgScopedMixin, ModelViewSet):
+    serializer_class = ProjectSerializer
+    permission_classes = [IsAuthenticated, IsOrgMember]
+    filterset_class = ProjectFilter
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("org").prefetch_related("members")
+```
+
+## Serializer Conventions
+
+- One file per resource in `serializers/` directory.
+- Use `ModelSerializer` for standard CRUD. Use `Serializer` for custom input/output.
+- Validation logic in serializer `validate_<field>()` or `validate()` methods.
+- Read-only computed fields: use `SerializerMethodField` with type annotations.
+- Nested serializers: read-only by default. Use separate write serializers for nested writes.
+
+## Service Layer
+
+- Business logic in `services.py` as module-level functions or service classes.
+- Services accept model instances and primitives, not request objects or serializer data.
+- Services handle: validation rules spanning multiple models, side effects, external API calls.
+- Services raise domain exceptions from `apps.core.exceptions`.
+
+```python
+def create_project(*, org: Organization, created_by: User, title: str, **kwargs) -> Project:
+    if Project.objects.filter(org=org, title=title).exists():
+        raise DuplicateProjectError(f"Project '{title}' already exists in this org")
+    return Project.objects.create(org=org, created_by=created_by, title=title, **kwargs)
+```
+
+## Multi-Tenancy
+
+- Org-scoping enforced at the queryset level via `OrgScopedMixin`.
+- `OrgScopedMixin.get_queryset()` filters by `self.request.user.org`.
+- `OrgScopedMixin.perform_create()` sets `org=self.request.user.org`.
+- Manager method `for_org(org)` as the standard scoping entry point.
+- Never use `.objects.all()` in views. Always scope to org.
+- Admin (`is_staff`) bypasses org-scoping for support tooling.
+
+## Query Optimization
+
+- Always use `select_related()` for ForeignKey fields accessed in serializers.
+- Always use `prefetch_related()` for reverse ForeignKey and M2M relationships.
+- Use `only()` or `defer()` to limit fields on large tables.
+- Add database indexes for fields used in `filter()`, `order_by()`, and `distinct()`.
+- Use `django-debug-toolbar` in development to catch N+1 queries.
+- Annotate aggregations at the queryset level, not in Python loops.
+
+## Testing
+
+- Use `pytest` with `pytest-django`. Do not use `django.test.TestCase`.
+- Factories with `factory-boy` in `tests/factories.py` per app.
+- API tests use `rest_framework.test.APIClient`.
+- Always test: happy path, validation errors, permission denied, not found.
+- Fixtures: use `@pytest.fixture` with factory functions, not Django fixtures.
+- Mock external services with `unittest.mock.patch` or `responses` library.
+- Mark slow tests with `@pytest.mark.slow`. CI runs slow tests only on `develop`.
+
+```python
+@pytest.mark.django_db
+class TestProjectAPI:
+    def test_create_project(self, auth_client, org):
+        response = auth_client.post("/api/v1/projects/", {"title": "New Project"})
+        assert response.status_code == 201
+        assert response.data["title"] == "New Project"
+        assert Project.objects.filter(org=org, title="New Project").exists()
+
+    def test_create_project_unauthenticated(self, client):
+        response = client.post("/api/v1/projects/", {"title": "New Project"})
+        assert response.status_code == 401
+
+    def test_cannot_see_other_org_projects(self, auth_client, other_org_project):
+        response = auth_client.get(f"/api/v1/projects/{other_org_project.id}/")
+        assert response.status_code == 404
+```
+
+## Celery Tasks
+
+- Tasks in `tasks.py` per app.
+- Use `@shared_task` decorator with `bind=True` for retry support.
+- Set `autoretry_for`, `retry_backoff`, and `max_retries` on tasks.
+- Tasks accept primitive arguments (IDs, strings), not model instances.
+- Idempotency: tasks must handle being called multiple times safely.
+
+## Migrations
+
+- Auto-generated by `makemigrations`. Review before committing.
+- Never edit a migration that has been merged to `develop`.
+- Data migrations in separate files with descriptive names.
+- Always test migrations forward and backward: `migrate` and `migrate <app> <previous>`.
+
+## Git Workflow
+
+- Branch from `develop`. Never commit to `main` or `develop` directly.
+- Branch naming: `feat/API-123-short-description` or `fix/API-456-short-description`.
+- Conventional commits: `feat:`, `fix:`, `chore:`, `test:`, `docs:`.
+- PR titles: `type(scope): description (API-123)`.
+- Keep PRs focused. One logical change per PR. Under 400 lines of diff when possible.
+
+## Security
+
+- Never log or expose secrets, passwords, or tokens.
+- Use `django.conf.settings` for sensitive values, loaded from environment variables.
+- All input validated through serializers before reaching business logic.
+- SQL injection prevented by ORM (never use raw SQL without parameterization).
+- CORS configured per-environment in settings.
+- Rate limiting via `django-ratelimit` on authentication endpoints.
+
+## Error Handling
+
+- DRF custom exception handler in `apps/core/exceptions.py`.
+- Response format: `{ "detail": "message", "code": "ERROR_CODE" }`.
+- Custom exceptions inherit from `APIException` with appropriate `status_code`.
+- Structured logging with `structlog`. Include request ID for tracing.
+- Unhandled exceptions return 500 with generic message (no stack trace in production).

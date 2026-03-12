@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "pnpm install",
+      "pnpm dev*",
+      "pnpm build*",
+      "pnpm test*",
+      "pnpm vitest*",
+      "pnpm lint*",
+      "pnpm format*",
+      "pnpm typecheck*",
+      "pnpm --filter=*",
+      "pnpm playwright test*",
+      "pnpm turbo*",
+      "npx drizzle-kit*",
+      "git status",
+      "git diff*",
+      "git log*",
+      "git branch*",
+      "git checkout*",
+      "git switch*",
+      "git add*",
+      "git commit*",
+      "git push*",
+      "git pull*",
+      "git fetch*",
+      "git merge*",
+      "git stash*",
+      "git rebase*"
+    ],
+    "deny": [
+      "curl*",
+      "wget*",
+      "rm -rf /*",
+      "pnpm publish*",
+      "npx prisma migrate deploy*",
+      "docker*"
+    ]
+  }
+}

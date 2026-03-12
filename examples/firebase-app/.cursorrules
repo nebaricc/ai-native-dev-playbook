@@ -1,0 +1,134 @@
+# Cursor Rules -- Signalboard (Firebase App)
+
+Read CLAUDE.md before starting any task. It contains project architecture,
+commands, and conventions that must be followed.
+
+## Project Structure
+
+This is an npm workspaces monorepo:
+- `apps/web` -- Next.js 14 App Router (customer dashboard)
+- `apps/functions` -- Cloud Functions v2 (event-driven + HTTP callable)
+- `apps/bot` -- Discord.js bot
+- `databases/` -- Firestore security rules and indexes
+- `packages/ui` -- Shared design system components (`@sig/ui`)
+- `types/` -- Shared TypeScript types (`@sig/types`)
+
+## General Rules
+
+- Use TypeScript strict mode. No `any` types without a justifying comment.
+- Use named exports everywhere. Default exports only for Next.js pages/layouts.
+- Import shared types as `@sig/types` and UI components as `@sig/ui`.
+- Colocate test files next to source: `handler.ts` -> `handler.test.ts`.
+- Keep files under 250 lines. Extract into smaller modules when approaching the limit.
+- All Firestore writes happen through Cloud Functions, never directly from the web client.
+
+## TypeScript Conventions
+
+- Prefer `interface` for object shapes. Use `type` for unions and utility types.
+- Firestore document types defined in `types/firestore/` with `WithId<T>` wrapper for client-side use.
+- Use `as const` objects instead of enums. Derive union types from values.
+- Function parameters: destructured objects for 3+ parameters.
+- Use `satisfies` operator for type-safe literal objects.
+
+## Firestore Patterns
+
+- Use typed converters for all Firestore references:
+
+```typescript
+import { converter } from "@/lib/firestore/converter";
+import type { Signal } from "@sig/types";
+
+const signalRef = doc(db, `orgs/${orgId}/signals/${signalId}`).withConverter(
+  converter<Signal>()
+);
+```
+
+- Collection references centralized in `apps/web/src/lib/firestore/collections.ts`.
+- All documents must include `createdAt`, `updatedAt`, and `createdBy` fields.
+- Use `serverTimestamp()` for timestamp fields, never `new Date()`.
+- Batch writes for multi-document updates. Use transactions when reads are needed.
+- Subcollection paths: `orgs/{orgId}/[collection]/{docId}`.
+
+## Cloud Functions (apps/functions)
+
+- One function per file in `src/handlers/`.
+- Name functions descriptively: `onSignalCreated`, `onMemberInvited`, `handleWebhook`.
+- Use v2 function declarations:
+
+```typescript
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+
+export const onSignalCreated = onDocumentCreated(
+  "orgs/{orgId}/signals/{signalId}",
+  async (event) => {
+    const signal = event.data?.data();
+    // ...
+  }
+);
+```
+
+- HTTP callable functions validate input with Zod schemas.
+- Set appropriate memory, timeout, and concurrency in function options.
+- Idempotency: event-triggered functions must handle duplicate invocations.
+
+## React / Next.js (apps/web)
+
+- Server components by default. Add `"use client"` only when necessary.
+- Use App Router patterns: `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`.
+- Data fetching in server components using Firebase Admin SDK (server-side) or Firestore hooks (client-side).
+- Auth state managed via `AuthProvider` context wrapping the app.
+- Protected routes use `middleware.ts` to check Firebase Auth session cookie.
+
+## Design System (@sig/ui)
+
+- All UI primitives come from `@sig/ui`. Do not add competing UI libraries.
+- Component variants defined with `cva` (class-variance-authority).
+- Import components: `import { Button, Card, Badge } from "@sig/ui"`.
+- Colors use semantic tokens: `primary`, `secondary`, `accent`, `destructive`, `muted`.
+- Follow the existing component API patterns. Check `packages/ui/src/` for examples.
+
+## Styling
+
+- Tailwind CSS exclusively. No CSS modules, styled-components, or inline styles.
+- Use `cn()` for conditional class merging (clsx + tailwind-merge).
+- Mobile-first responsive: base -> `sm:` -> `md:` -> `lg:`.
+- Dark mode supported via `dark:` variant. Always provide dark mode styles.
+
+## Discord Bot (apps/bot)
+
+- Command handlers in `src/commands/`. One file per command.
+- Use Discord.js slash command builders for registration.
+- Embed builders for rich responses. Keep embeds concise.
+- Rate limit awareness: respect Discord API limits.
+- Access Firestore through Firebase Admin SDK initialized in `src/lib/firebase.ts`.
+
+## Testing
+
+- Unit tests: Vitest with mocked dependencies.
+- Firestore rules tests: `@firebase/rules-unit-testing` against emulator.
+- Integration tests: run against Firebase Emulator Suite.
+- Test naming: `describe("SignalService")` / `it("creates a signal with valid data")`.
+- Factories in `tests/factories/` for generating test documents.
+
+## Git Workflow
+
+- Branch from `dev`. Never commit to `main` or `dev` directly.
+- Branch naming: `feat/SIG-123-short-description` or `fix/SIG-456-short-description`.
+- Conventional commits: `feat:`, `fix:`, `chore:`, `test:`, `docs:`.
+- PR titles: `type(scope): description (SIG-123)`.
+- Keep PRs focused. One logical change per PR.
+
+## Security
+
+- Org-scoping enforced everywhere: users see only their org's data.
+- Custom claims (`orgId`, `role`) set via Cloud Functions, never from client.
+- Firestore rules validate org-scoping on every read and write.
+- API keys and secrets stored in Secret Manager, accessed via `defineSecret()`.
+- Never commit `.env` files. Use `.env.example` with placeholder values.
+
+## Error Handling
+
+- Cloud Functions: `HttpsError` with codes (`not-found`, `permission-denied`, `invalid-argument`).
+- Web app: error boundaries per route segment with user-friendly messages.
+- Structured logging: `functions.logger.info()` with context fields.
+- Bot: catch errors, log context, send user-facing embed with "something went wrong" message.

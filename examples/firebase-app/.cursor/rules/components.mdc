@@ -1,0 +1,146 @@
+---
+description: React component and design system conventions
+globs: apps/web/src/components/**/*.tsx, apps/web/src/app/**/*.tsx, packages/ui/src/**/*.tsx
+alwaysApply: false
+---
+
+# Component and Design System Conventions
+
+## Design System (@sig/ui)
+
+All shared UI primitives live in `packages/ui/src/`. Import as:
+
+```typescript
+import { Button, Card, Badge, Dialog } from "@sig/ui";
+```
+
+Never install competing UI libraries (Chakra, MUI, Ant Design, etc.).
+If a primitive is missing from `@sig/ui`, add it there rather than building
+a one-off in `apps/web`.
+
+## Component Declaration
+
+Use function declarations with named exports:
+
+```typescript
+interface SignalCardProps {
+  signal: Signal;
+  onArchive?: (id: string) => void;
+  className?: string;
+}
+
+function SignalCard({ signal, onArchive, className }: SignalCardProps) {
+  return (
+    <Card className={cn("p-4", className)}>
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium text-foreground">{signal.title}</h3>
+        <Badge variant={signal.priority === "high" ? "destructive" : "secondary"}>
+          {signal.priority}
+        </Badge>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">{signal.description}</p>
+    </Card>
+  );
+}
+
+export { SignalCard };
+```
+
+## Org-Scoping Pattern
+
+All data-fetching components must be org-scoped. Never fetch across organizations:
+
+```typescript
+// Server component
+async function ProjectList() {
+  const orgId = await getOrgIdFromSession();
+  const projects = await getProjectsByOrg(orgId);
+  return <ProjectGrid projects={projects} />;
+}
+
+// Client component with Firestore hook
+function SignalList() {
+  const { orgId } = useAuth();
+  const signals = useCollection<Signal>(`orgs/${orgId}/signals`, {
+    orderBy: ["createdAt", "desc"],
+    limit: 50,
+  });
+  // ...
+}
+```
+
+## Server vs Client Components
+
+Default to server components. Add `"use client"` only for:
+- Components with `useState`, `useEffect`, event handlers
+- Components using Firestore real-time listeners (`onSnapshot`)
+- Components using `useAuth()` context
+- Interactive form components
+
+Keep client components small and push them to leaf nodes.
+
+## Styling
+
+- Tailwind CSS only. Use `cn()` for conditional classes.
+- Semantic color tokens from the design system: `text-foreground`, `bg-background`,
+  `text-muted-foreground`, `bg-accent`, `border-border`, `text-destructive`.
+- Always include dark mode variants for custom styles.
+- Responsive: mobile-first with `sm:`, `md:`, `lg:` breakpoints.
+
+## Component Variants (cva)
+
+For components with multiple visual variants, use `class-variance-authority`:
+
+```typescript
+import { cva, type VariantProps } from "class-variance-authority";
+
+const badgeVariants = cva(
+  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground",
+        secondary: "bg-secondary text-secondary-foreground",
+        destructive: "bg-destructive text-destructive-foreground",
+        outline: "border border-border text-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+);
+```
+
+## Loading States
+
+Use skeleton components that match the final layout:
+
+```typescript
+function SignalCardSkeleton() {
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-5 w-16 rounded-full" />
+      </div>
+      <Skeleton className="mt-2 h-4 w-full" />
+    </Card>
+  );
+}
+```
+
+## Accessibility
+
+- Interactive elements must be keyboard accessible.
+- Use semantic HTML (`button`, `nav`, `main`, `section`, `article`).
+- Icon-only buttons require `aria-label`.
+- Form inputs require associated labels.
+- Color must not be the sole indicator of state.
+
+## Testing
+
+- Test user behavior, not implementation.
+- Use Testing Library queries: `getByRole` > `getByLabelText` > `getByText`.
+- Colocate tests: `SignalCard.test.tsx` next to `SignalCard.tsx`.
+- Mock Firestore hooks in component tests.

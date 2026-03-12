@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "npm install*",
+      "npm run dev*",
+      "npm run build*",
+      "npm test*",
+      "npm run lint*",
+      "npm run format*",
+      "npm run typecheck*",
+      "npm run emulators*",
+      "npm run test:emulator*",
+      "npm run test:rules*",
+      "npm run deploy:*",
+      "firebase emulators:*",
+      "firebase deploy --only firestore:rules*",
+      "git status",
+      "git diff*",
+      "git log*",
+      "git branch*",
+      "git checkout*",
+      "git switch*",
+      "git add*",
+      "git commit*",
+      "git push*",
+      "git pull*",
+      "git fetch*",
+      "git merge*",
+      "git stash*",
+      "git rebase*"
+    ],
+    "deny": [
+      "curl*",
+      "wget*",
+      "rm -rf /*",
+      "npm publish*",
+      "firebase deploy --only functions*",
+      "firebase deploy --only hosting*",
+      "docker*",
+      "gcloud*"
+    ]
+  }
+}

@@ -1,0 +1,128 @@
+# Cursor Rules -- Acme Dashboard (Next.js pnpm Monorepo)
+
+Read CLAUDE.md before starting any task. It contains project architecture,
+commands, and conventions that must be followed.
+
+## Project Structure
+
+This is a pnpm monorepo managed by Turborepo:
+- `apps/web` -- Next.js 14 App Router (customer-facing dashboard)
+- `apps/api` -- Next.js Pages Router (REST API at /api/v1/*)
+- `packages/database` -- Drizzle ORM schemas, migrations, repositories
+- `packages/shared` -- Zod schemas, TypeScript types, shared constants
+
+## General Rules
+
+- Use TypeScript strict mode. No `any` types unless explicitly justified with a comment.
+- Use named exports everywhere. Default exports only for Next.js pages, layouts, and route handlers.
+- Import from workspace packages using `@acme/database` or `@acme/shared`, never relative paths across package boundaries.
+- Colocate test files next to the code they test: `Widget.tsx` -> `Widget.test.tsx`.
+- Keep files under 300 lines. Extract logic into hooks, utilities, or sub-components.
+- Use `satisfies` for type-safe object literals instead of type annotations where possible.
+
+## TypeScript Conventions
+
+- Prefer `interface` for object shapes that may be extended. Use `type` for unions, intersections, and mapped types.
+- Use Zod schemas from `@acme/shared` as the source of truth. Derive TypeScript types with `z.infer<typeof schema>`.
+- Avoid enums. Use `as const` objects with a union type derived from values.
+- Function parameters: use destructured objects for 3+ parameters.
+
+## React / Next.js Conventions
+
+- Components are server components by default. Only add `"use client"` when the component needs browser APIs, event handlers, or React state.
+- Use the App Router patterns: `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`.
+- Data fetching happens in server components or route handlers, never in client components directly.
+- Use `next/image` for all images. Never use raw `<img>` tags.
+- Use `next/link` for internal navigation. Never use raw `<a>` tags for internal links.
+- Forms: use React Hook Form with Zod resolvers from `@acme/shared`.
+
+## Component Patterns
+
+- Use function declarations for components: `function Widget({ title }: WidgetProps) {`
+- Props interface named `[ComponentName]Props` and defined directly above the component.
+- Avoid prop drilling beyond 2 levels. Use React Context or composition patterns.
+- UI primitives come from shadcn/ui (`@/components/ui/*`). Do not install additional UI libraries.
+- Custom components go in `@/components/` organized by feature, not by type.
+
+## Styling
+
+- Tailwind CSS only. No CSS modules, styled-components, or inline styles.
+- Use `cn()` utility from `@/lib/utils` for conditional class names (clsx + twMerge).
+- Design tokens come from `tailwind.config.ts`. Use semantic color names (e.g., `text-primary`, `bg-destructive`), not raw colors.
+- Responsive: mobile-first. Use `sm:`, `md:`, `lg:` breakpoints.
+
+## API Routes (apps/api)
+
+- All API routes live under `pages/api/v1/`.
+- Use the handler pattern: export default wrapped with `withErrorHandler()`.
+- Validate request bodies with Zod schemas: `const body = RequestSchema.parse(req.body)`.
+- Response format: `{ data: T, error: null }` on success, `{ data: null, error: { message, code } }` on failure.
+- Authentication: use `withAuth()` middleware. Access user via `req.user`.
+- Rate limiting configured per-route via `withRateLimit()`.
+
+## Database (packages/database)
+
+- Schema files: one file per domain entity in `src/schema/`.
+- Naming: tables use `snake_case`, TypeScript fields use `camelCase` (Drizzle handles mapping).
+- All queries go through repository classes in `src/repositories/`.
+- Repositories accept a `db` parameter for testability. Never import a global db instance inside a repository.
+- Migrations: never edit existing migration files. Always generate a new migration.
+- Use transactions for multi-table writes: `db.transaction(async (tx) => { ... })`.
+
+## Testing
+
+- Unit tests: Vitest. Test business logic and utilities. Mock external dependencies.
+- Component tests: Vitest + Testing Library. Test behavior, not implementation.
+- E2E tests: Playwright in `tests/e2e/`. Test critical user flows.
+- Test file naming: `*.test.ts` for unit, `*.spec.ts` for E2E.
+- Use `describe`/`it` blocks. Test names should read as sentences: `it("returns 401 when token is expired")`.
+- Fixtures and factories in `tests/fixtures/`. Use `createTestUser()` style helpers.
+
+## Git Workflow
+
+- Branch from `development`. Never commit directly to `main` or `development`.
+- Branch naming: `feat/PROJ-123-short-description` or `fix/PROJ-456-short-description`.
+- Commit messages: conventional commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`).
+- PR titles: `type(scope): description (PROJ-123)`.
+- Keep PRs focused. One logical change per PR. Under 400 lines of diff when possible.
+
+## Security
+
+- Never log or expose secrets, tokens, or passwords.
+- Sanitize user input before database queries (Drizzle parameterizes by default).
+- Validate all external input at API boundaries with Zod.
+- Use `httpOnly` and `secure` flags on cookies.
+- CSP headers configured in `next.config.js`.
+
+## Performance
+
+- Use React `Suspense` boundaries with meaningful loading states.
+- Lazy load heavy client components with `next/dynamic`.
+- Database queries: always add `.limit()` to list queries. Index columns used in `WHERE` clauses.
+- Use Turborepo remote caching in CI. Local caching enabled by default.
+
+## Error Handling
+
+- API: use `AppError` class from `apps/api/src/lib/errors.ts` with appropriate HTTP status codes.
+- Client: use error boundaries (`error.tsx`) per route segment.
+- Log errors with structured fields via `pino`. Include request ID for tracing.
+- Never show raw error messages to users in production.
+
+## Accessibility
+
+- All interactive elements must be keyboard accessible.
+- Use semantic HTML elements (`button`, `nav`, `main`, `section`).
+- Images require meaningful `alt` text. Decorative images use `alt=""`.
+- Use `aria-label` on icon-only buttons.
+- Color is never the sole indicator of state -- always add icons or text.
+
+## Import Order
+
+Imports should follow this order, separated by blank lines:
+1. React / Next.js imports
+2. Third-party library imports
+3. Workspace package imports (`@acme/*`)
+4. Local imports (`@/`, `./`)
+5. Type-only imports (`import type { ... }`)
+
+ESLint enforces this via `eslint-plugin-import` with the project configuration.

@@ -1,0 +1,144 @@
+---
+description: React component conventions for the web app
+globs: apps/web/src/components/**/*.tsx, apps/web/src/app/**/*.tsx
+alwaysApply: false
+---
+
+# React Component Conventions
+
+## Component Declaration
+
+Use function declarations with explicit props interfaces:
+
+```typescript
+interface MetricCardProps {
+  title: string;
+  value: number;
+  trend?: "up" | "down" | "flat";
+  className?: string;
+}
+
+function MetricCard({ title, value, trend = "flat", className }: MetricCardProps) {
+  return (
+    <div className={cn("rounded-lg border p-4", className)}>
+      <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+      <p className="text-2xl font-bold">{value.toLocaleString()}</p>
+      {trend !== "flat" && <TrendIndicator direction={trend} />}
+    </div>
+  );
+}
+
+export { MetricCard };
+```
+
+## Server vs Client Components
+
+- Components are server components by default. Do not add `"use client"` unless required.
+- Add `"use client"` when the component uses: `useState`, `useEffect`, `useRef`, event handlers (`onClick`, `onChange`), browser APIs, or third-party client-only libraries.
+- Keep client components as small and leaf-level as possible. Extract server-renderable parts upward.
+
+## File Organization
+
+```
+src/components/
+  ui/               -- shadcn/ui primitives (Button, Dialog, etc.)
+  dashboard/        -- Dashboard feature components
+    MetricCard.tsx
+    MetricCard.test.tsx
+    ChartPanel.tsx
+    DashboardHeader.tsx
+  settings/         -- Settings feature components
+  shared/           -- Cross-feature components (PageHeader, EmptyState, etc.)
+```
+
+## Composition Over Configuration
+
+Prefer composable components over prop-heavy ones:
+
+```typescript
+// Prefer this:
+<Card>
+  <CardHeader>
+    <CardTitle>Revenue</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <LineChart data={revenueData} />
+  </CardContent>
+</Card>
+
+// Over this:
+<Card title="Revenue" chart={<LineChart data={revenueData} />} />
+```
+
+## Data Fetching
+
+Fetch data in server components or use route handlers:
+
+```typescript
+// In a server component (page.tsx or layout.tsx)
+async function DashboardPage() {
+  const metrics = await getMetrics();
+  return <MetricGrid metrics={metrics} />;
+}
+```
+
+For client-side data that needs to update, use SWR or React Query with API routes:
+
+```typescript
+"use client";
+
+import useSWR from "swr";
+
+function LiveMetrics() {
+  const { data, error, isLoading } = useSWR("/api/v1/metrics/live", fetcher, {
+    refreshInterval: 30_000,
+  });
+  // ...
+}
+```
+
+## Styling Rules
+
+- Use Tailwind CSS classes exclusively. No CSS modules or inline styles.
+- Use `cn()` from `@/lib/utils` for conditional classes.
+- Use semantic color tokens: `text-primary`, `bg-muted`, `border-destructive`.
+- Mobile-first responsive design: base styles for mobile, then `sm:`, `md:`, `lg:`.
+
+## Loading and Error States
+
+Every async page segment should have corresponding files:
+
+```
+app/dashboard/
+  page.tsx
+  loading.tsx      -- Skeleton UI shown while page data loads
+  error.tsx        -- Error boundary for this segment
+```
+
+Loading states should use skeleton components that match the layout:
+
+```typescript
+function DashboardLoading() {
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Skeleton key={i} className="h-32 rounded-lg" />
+      ))}
+    </div>
+  );
+}
+```
+
+## Accessibility
+
+- All interactive elements must be keyboard accessible.
+- Use semantic HTML elements (`button`, `nav`, `main`, `section`).
+- Images require meaningful `alt` text. Decorative images use `alt=""`.
+- Use `aria-label` on icon-only buttons.
+- Color is never the sole indicator of state (add icons or text).
+
+## Testing
+
+- Test user-visible behavior, not implementation details.
+- Use Testing Library queries in priority order: `getByRole` > `getByLabelText` > `getByText` > `getByTestId`.
+- Test files colocated: `MetricCard.test.tsx` next to `MetricCard.tsx`.

@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "defaultMode": "plan",
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash({PACKAGE_MANAGER} run lint)",
+      "Bash({PACKAGE_MANAGER} run lint --fix)",
+      "Bash({PACKAGE_MANAGER} run type-check)",
+      "Bash({PACKAGE_MANAGER} run test*)",
+      "Bash({PACKAGE_MANAGER} run build)",
+      "Bash(git *)",
+      "Bash(gh *)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf*)"
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+---
+description: Rules for API route handlers and backend endpoints
+globs: ["src/app/api/**/*", "src/routes/**/*", "src/pages/api/**/*", "server/routes/**/*"]
+---
+
+# API Route Rules
+
+## Structure
+- One route handler per file. Group by resource (`/api/users/`, `/api/posts/`).
+- Separate route handler from business logic. Routes are thin -- they parse input, call a service, and format output.
+- Use a consistent response envelope:
+  ```typescript
+  { data: T } | { error: { code: string; message: string } }
+  ```
+
+## Input Validation
+- Validate ALL incoming data at the route boundary (body, params, query).
+- Use a schema validation library (Zod, Joi, Yup) -- never trust raw input.
+- Return 400 with descriptive error messages for invalid input.
+- Sanitize strings to prevent injection attacks.
+
+```typescript
+const schema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(100),
+});
+
+const parsed = schema.safeParse(req.body);
+if (!parsed.success) {
+  return res.status(400).json({ error: { code: "VALIDATION_ERROR", message: parsed.error.message } });
+}
+```
+
+## Error Handling
+- Use typed error classes with HTTP status codes.
+- Never expose internal error details (stack traces, SQL errors) to clients.
+- Log full error context server-side with structured logging.
+- Return appropriate status codes:
+  - 400: Bad request / validation error
+  - 401: Not authenticated
+  - 403: Not authorized
+  - 404: Resource not found
+  - 409: Conflict
+  - 422: Unprocessable entity
+  - 500: Internal server error (unexpected)
+
+## Authentication and Authorization
+- Check authentication before processing any request.
+- Check authorization (permissions/roles) after authentication.
+- Use middleware for cross-cutting auth concerns.
+- Never rely on client-side checks alone.
+
+## Database Queries
+- Use parameterized queries. Never string-interpolate user input into queries.
+- Use transactions for multi-step mutations.
+- Handle connection errors and timeouts gracefully.
+- Limit result sets with pagination -- never return unbounded queries.
+
+## Response Format
+- Use consistent HTTP status codes and response shapes.
+- Include pagination metadata for list endpoints: `{ data: [], meta: { total, page, pageSize } }`.
+- Return only the fields the client needs -- no over-fetching.
+- Set appropriate cache headers.
+
+## Performance
+- Add database indexes for frequently queried fields.
+- Use pagination for list endpoints (default page size, max page size).
+- Rate-limit endpoints that are expensive or abuse-prone.
+- Cache responses where appropriate (CDN, in-memory, Redis).
+
+## Testing
+- Test the full request/response cycle (integration tests).
+- Cover: valid input, invalid input, unauthorized access, not found, server errors.
+- Use a test database or in-memory store -- never test against production.
+- Verify response status codes, response body shape, and side effects.
+
+## Documentation
+- Document request/response schemas (OpenAPI, JSDoc, or inline types).
+- Include example requests and responses in comments for non-obvious endpoints.
+- Note rate limits, required permissions, and deprecation status.

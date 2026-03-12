@@ -1,0 +1,157 @@
+---
+description: Firestore security rules conventions and patterns
+globs: databases/firestore.rules, databases/**/*.rules
+alwaysApply: false
+---
+
+# Firestore Security Rules Conventions
+
+## File Location
+
+Security rules live in `databases/firestore.rules`. Index definitions in
+`databases/firestore.indexes.json`.
+
+## Rule Structure
+
+Follow this top-level structure:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions at the top
+    // Then match blocks organized by collection hierarchy
+  }
+}
+```
+
+## Helper Functions
+
+Define reusable helper functions at the top of the rules file:
+
+```
+function isSignedIn() {
+  return request.auth != null;
+}
+
+function isOrgMember(orgId) {
+  return isSignedIn() && request.auth.token.orgId == orgId;
+}
+
+function isOrgAdmin(orgId) {
+  return isOrgMember(orgId) && request.auth.token.role == 'admin';
+}
+
+function isOwner(resource) {
+  return isSignedIn() && resource.data.createdBy == request.auth.uid;
+}
+
+function isValidTimestamp(field) {
+  return request.resource.data[field] is timestamp;
+}
+```
+
+## Org-Scoping (Critical)
+
+Every collection under `orgs/{orgId}` must enforce org membership. This is the
+most important security invariant in the system:
+
+```
+match /orgs/{orgId} {
+  allow read: if isOrgMember(orgId);
+  allow update: if isOrgAdmin(orgId);
+  // No create/delete from client -- handled by Cloud Functions
+
+  match /projects/{projectId} {
+    allow read: if isOrgMember(orgId);
+    allow create: if isOrgMember(orgId)
+      && request.resource.data.createdBy == request.auth.uid
+      && isValidTimestamp('createdAt');
+    allow update: if isOrgMember(orgId);
+    allow delete: if isOrgAdmin(orgId) || isOwner(resource);
+  }
+
+  match /signals/{signalId} {
+    allow read: if isOrgMember(orgId);
+    allow create: if isOrgMember(orgId)
+      && request.resource.data.createdBy == request.auth.uid;
+    allow update: if isOrgMember(orgId);
+    allow delete: if isOrgAdmin(orgId);
+  }
+
+  match /members/{userId} {
+    allow read: if isOrgMember(orgId);
+    allow write: if isOrgAdmin(orgId);
+  }
+}
+```
+
+## User Profile Rules
+
+User profiles are cross-org and self-managed:
+
+```
+match /users/{userId} {
+  allow read: if isSignedIn();
+  allow create: if request.auth.uid == userId;
+  allow update: if request.auth.uid == userId;
+  allow delete: if false; // Handled by Cloud Functions
+}
+```
+
+## Write Validation
+
+Validate document structure on writes:
+
+```
+allow create: if isOrgMember(orgId)
+  && request.resource.data.keys().hasAll(['title', 'createdAt', 'createdBy'])
+  && request.resource.data.title is string
+  && request.resource.data.title.size() > 0
+  && request.resource.data.title.size() <= 200
+  && request.resource.data.createdBy == request.auth.uid;
+```
+
+## Rules to Follow
+
+1. **Default deny**: if no rule matches, access is denied. Never add a blanket `allow read, write: if true`.
+2. **Org-scoping on every subcollection**: every `match` under `orgs/{orgId}` must check `isOrgMember(orgId)`.
+3. **No client deletes on critical data**: orgs and users are deleted only via Cloud Functions with Admin SDK.
+4. **Validate required fields**: `create` rules should check that required fields exist and have correct types.
+5. **Prevent privilege escalation**: users cannot set their own `role` or `orgId` claims. Only Cloud Functions can modify custom claims.
+6. **Size limits**: validate string lengths to prevent abuse (`title.size() <= 200`).
+7. **createdBy immutability**: on `update`, ensure `createdBy` cannot be changed: `request.resource.data.createdBy == resource.data.createdBy`.
+
+## Testing Rules
+
+Always test rules before deploying:
+
+```bash
+npm run test:rules
+```
+
+Tests live in `tests/rules/` and use `@firebase/rules-unit-testing`:
+
+```typescript
+import { assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
+
+it("allows org members to read signals", async () => {
+  const db = getFirestoreForUser({ uid: "user1", orgId: "org1", role: "member" });
+  await assertSucceeds(getDoc(doc(db, "orgs/org1/signals/signal1")));
+});
+
+it("denies cross-org reads", async () => {
+  const db = getFirestoreForUser({ uid: "user1", orgId: "org1", role: "member" });
+  await assertFails(getDoc(doc(db, "orgs/org2/signals/signal1")));
+});
+```
+
+## Deployment
+
+Deploy rules separately from functions:
+
+```bash
+npm run deploy:rules  # Deploys firestore.rules + firestore.indexes.json
+```
+
+Never deploy rules and functions in the same command to isolate failures.

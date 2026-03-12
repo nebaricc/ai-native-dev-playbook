@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "poetry install*",
+      "poetry run python manage.py runserver*",
+      "poetry run python manage.py migrate*",
+      "poetry run python manage.py makemigrations*",
+      "poetry run python manage.py shell*",
+      "poetry run python manage.py dbshell*",
+      "poetry run python manage.py seed*",
+      "poetry run python manage.py createsuperuser*",
+      "poetry run pytest*",
+      "poetry run ruff*",
+      "poetry run black*",
+      "poetry run mypy*",
+      "poetry run celery*",
+      "git status",
+      "git diff*",
+      "git log*",
+      "git branch*",
+      "git checkout*",
+      "git switch*",
+      "git add*",
+      "git commit*",
+      "git push*",
+      "git pull*",
+      "git fetch*",
+      "git merge*",
+      "git stash*",
+      "git rebase*"
+    ],
+    "deny": [
+      "curl*",
+      "wget*",
+      "rm -rf /*",
+      "poetry publish*",
+      "python manage.py flush*",
+      "docker*",
+      "pip install*"
+    ]
+  }
+}
