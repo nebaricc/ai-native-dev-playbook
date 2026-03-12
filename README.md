@@ -1,694 +1,248 @@
 # AI-Native Development Playbook
 
-A battle-tested guide to making AI assistants effective contributors to your codebase.
+**A battle-tested system for making AI coding assistants produce production-quality work.**
+
+Built from real experience applying AI-assisted development across 3 client engineering teams, 40+ merged PRs, and hundreds of AI-generated commits. Works with Claude Code, Cursor, GitHub Copilot, and whatever ships next.
 
 ---
 
-## What This Is
+## Who This Is For
 
-A practical playbook for configuring any repository so AI coding assistants -- Claude Code, Cursor, Copilot, Windsurf, or whatever ships next quarter -- produce high-quality, reviewable, test-backed work.
+- **Engineering leads** adopting AI tools across a team and tired of inconsistent output quality
+- **Solo developers** who want AI assistants that understand their codebase, not just their prompt
+- **Fractional CTOs and consultants** standardizing AI workflows across multiple client repos
+- **Teams using Cursor** who can't access Claude Code (or vice versa) and need tool-agnostic standards
 
-This is **not** about prompt engineering. It is about:
-
-- **Repo-level configuration** that gives AI agents the context they need
-- **CI enforcement** that catches what agents get wrong
-- **Workflow design** that channels AI speed into shippable increments
-- **Testing standards** that prevent velocity theater
-
-The approach has been proven across three production codebases: a Next.js/Firebase monorepo, a pnpm monorepo (Next.js + NestJS + Flutter), and a Django + Flutter app. It was created by a Fractional CTO who applied it across 3 client engineering teams in early 2026.
+If you've ever watched an AI assistant confidently generate code that doesn't match your patterns, skip your tests, force-push to main, or produce a 500-line PR that touches every file in the repo -- this playbook is your fix.
 
 ---
 
-## The Problem
+## The Industry Problem
 
-AI assistants are powerful but undisciplined by default:
+AI coding assistants are the biggest productivity unlock in a decade. They're also the biggest quality risk.
 
-- They dump 500-line PRs touching 30 files
-- They skip tests unless explicitly told to write them
-- They invent new patterns instead of following yours
-- They don't know your deployment pipeline, branch strategy, or PR conventions
-- They force-push, commit `.env` files, and `git add .` without thinking
-- Different team members get wildly different quality from the same tools
-- They produce "velocity theater" -- lots of code, few guarantees
+**The promise:** A senior developer pairs with an AI that understands the codebase, follows conventions, writes tests, and ships small, reviewable PRs. The developer focuses on architecture and code review while the AI handles implementation.
 
-The root cause is the same every time: **the AI has no context about how your team works.** It is coding in a vacuum.
+**The reality for most teams:**
 
----
+- **No context, no consistency.** The AI doesn't know your ORM, your auth pattern, your component library, or your branch strategy. It guesses -- and guesses differently every session. One developer gets clean output because they prompt well. Another gets spaghetti. The tool isn't the variable; the context is.
 
-## The Solution: Context as Code
+- **Velocity theater.** The AI ships fast. Four PRs before lunch. But zero tests, no type checking, invented patterns that don't match the codebase, and a 30-file PR that no one wants to review. It *looks* fast. It creates more work than it saves.
 
-Treat AI configuration like infrastructure -- version-controlled, enforced by CI, shared across the team.
+- **Rules without enforcement.** You write a CONTRIBUTING.md that says "all PRs need tests." The AI doesn't read CONTRIBUTING.md. Even if you add rules to an AI-specific config file, nothing stops the AI from ignoring them. Without CI gates, rules are suggestions.
 
-The playbook has four phases, each building on the last:
+- **Tool fragmentation.** Your team uses three different AI tools. Claude Code reads `CLAUDE.md`. Cursor reads `.cursorrules`. Copilot reads `.github/copilot-instructions.md`. Each tool gets different context, produces different output, and the team has no shared standard for AI-assisted work.
 
-| Phase | What | Why |
-|-------|------|-----|
-| 1. Context as Code | CLAUDE.md, .cursorrules, settings, skills | AI knows your standards |
-| 2. CI Enforcement | PR guards, test gates, pre-push hooks | Standards are enforced, not suggested |
-| 3. Testing Standards | Quality rules, visual regression, coverage gates | AI output is verified |
-| 4. Workflow Skills | /idea, /ship, /continue automation | AI workflow matches your workflow |
+- **Session amnesia.** You spend 45 minutes getting the AI up to speed on your project. The context window fills up. Next session, you start over. The AI has no memory of what was done, what failed, or what's left.
+
+The root cause is always the same: **the AI has no context about how your team works.** It's coding in a vacuum. And no one is checking its homework.
 
 ---
 
-## Phase 1: Context as Code (Foundation)
+## The Solution
 
-Every AI tool reads some form of context file. The goal is to make these files comprehensive, version-controlled, and consistent across tools.
+Treat AI configuration like infrastructure: version-controlled, enforced by CI, consistent across tools, and shared across the team.
 
-### 1.1 Create CLAUDE.md
+This playbook has four phases. Each builds on the last:
 
-This is the primary context file. It lives at the root of your repo and is loaded automatically by Claude Code. Other tools can reference it too.
+| Phase | What You Do | What You Get |
+|-------|-------------|--------------|
+| **1. Context as Code** | Add `CLAUDE.md`, `.cursorrules`, settings, and file-scoped rules to your repo | AI knows your stack, patterns, conventions, and constraints before writing a single line |
+| **2. CI Enforcement** | Add PR size guards, test coverage gates, pre-push hooks | Standards are enforced automatically -- the AI can't merge bad code even if it tries |
+| **3. Testing Standards** | Define test quality rules, set up visual regression, block weak assertions | AI-generated tests actually catch bugs instead of giving false confidence |
+| **4. Workflow Skills** | Create `/idea`, `/ship`, `/continue` commands that encode your workflow | The AI follows your team's process -- branching, testing, PR creation -- every time |
 
-**Sections to include** (adapt to your stack):
+**You can stop at any phase and still get value.** Phase 1 alone -- adding context files to your repo -- typically produces the biggest quality jump. Most teams see AI output go from "needs heavy editing" to "ready for review" just by giving the AI proper context.
 
-| Section | What to Put |
-|---------|-------------|
-| Overview | Repo structure, tech stack, package manager, test runner |
-| Commands | `install`, `dev`, `test`, `type-check`, `lint`, `build` |
-| Git Conventions | Branch naming (`type/TICKET-123-desc`), commit format, PR titles, target branch, merge strategy |
-| Code Style | Language-specific rules: strict mode, naming, imports, component patterns |
-| Architecture | API patterns, service layer, state management, data access rules |
-| Quality Standards | Test requirements, assertion rules, pre-push checks |
-| Agent Behavior Rules | The 10 rules (see Section 1.3) |
-| Definition of Done | Checklist: compiles, tests pass, lint clean, no secrets in diff |
+---
 
-See `templates/CLAUDE.md.template` for a full example.
+## Multi-Tool Support: Claude Code + Cursor + Copilot
 
-### 1.2 Create Tool-Specific Configs
+This playbook is tool-agnostic by design. The standards are the same regardless of which AI tool your team uses. What changes is *where* you put the configuration.
 
-Different AI tools read different files. You need all of them.
+| Concept | Claude Code | Cursor | GitHub Copilot |
+|---------|-------------|--------|----------------|
+| **Project context** | `CLAUDE.md` (auto-loaded) | `.cursorrules` (auto-loaded) | `.github/copilot-instructions.md` |
+| **Permissions / guardrails** | `.claude/settings.json` | Built-in settings UI | N/A |
+| **File-scoped rules** | `.claude/skills/*.md` (on-demand) | `.cursor/rules/*.mdc` (glob-triggered) | N/A |
+| **Workflow commands** | `.claude/commands/*.md` → `/command` | N/A (manual workflow) | N/A |
+| **Sub-agents** | Agent tool with worktrees | Composer (limited) | N/A |
 
-**`.claude/settings.json`** -- permissions and guardrails for Claude Code:
+### Why you need both `.cursorrules` AND `CLAUDE.md`
 
-```json
-{
-  "permissions": {
-    "defaultMode": "plan",
-    "allow": [
-      "Read",
-      "Glob",
-      "Grep",
-      "Bash(npm run lint)",
-      "Bash(npm run type-check)",
-      "Bash(npm run test*)",
-      "Bash(npm run build)",
-      "Bash(git *)",
-      "Bash(gh *)"
-    ],
-    "deny": [
-      "Bash(git push --force*)",
-      "Bash(git push -f*)",
-      "Bash(git reset --hard*)",
-      "Bash(rm -rf*)"
-    ]
-  }
-}
-```
+If your team uses multiple tools -- or if some team members can't access Claude Code due to licensing or policy -- you need both files. They serve the same purpose (project context) but are read by different tools.
 
-Adapt commands per repo (`npm` vs `pnpm`, `vitest` vs `jest`, etc.).
+**Critical rule: `.cursorrules` must be comprehensive and standalone.** Don't just write "read CLAUDE.md" -- Cursor's config loading is fragile and won't reliably follow that reference. Duplicate the key standards: tech stack, git conventions, code style, testing rules, and the 10 agent behavior rules. Yes, this means maintaining two files. The alternative -- team members getting inconsistent AI behavior -- is worse.
 
-**`.cursorrules`** -- must be comprehensive and standalone. Do NOT just write "read CLAUDE.md" -- Cursor's "Include third-party configs" setting is fragile. Duplicate all key standards inline: tech stack, git conventions, code style, testing rules, and the 10 agent rules.
-
-**`.cursor/rules/*.mdc`** -- file-scoped rules that activate for specific globs:
+**File-scoped rules** give you context-aware guidance when editing specific file types:
 
 ```
 # .cursor/rules/tests.mdc
 ---
 globs: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"]
 ---
-Testing conventions:
-- Use describe/it blocks with clear descriptions
-- No .toBeDefined() — use .toBeInTheDocument(), .toEqual(), etc.
-- Mock external services, not internal functions
-- Test edge cases: empty data, error states, loading states
+- Use describe/it blocks with clear behavior descriptions
+- No .toBeDefined() -- use .toEqual(), .toBeInTheDocument(), etc.
+- Test edge cases: empty data, error states, permission denied
+- One assertion concept per test
 ```
 
-Create `.mdc` files for each domain: API routes, components, tests, database, etc.
+Claude Code's equivalent is `.claude/skills/` -- markdown files loaded on-demand when the agent encounters relevant files. Cursor's `.cursor/rules/*.mdc` files use MDC frontmatter with glob patterns to auto-activate.
 
-**`.claude/skills/`** -- on-demand domain knowledge Claude Code loads when relevant (visual testing conventions, deployment pipeline, database schema docs).
+**Keep them in sync.** Make `CLAUDE.md` the source of truth. Mirror key standards into `.cursorrules`. Create parallel file-scoped rules in both `.claude/skills/` and `.cursor/rules/`. See [docs/multi-tool-setup.md](docs/multi-tool-setup.md) for the full alignment strategy.
 
-### 1.3 The 10 Agent Rules
+> **For Cursor-only teams:** You can adopt this entire playbook using only `.cursorrules` and `.cursor/rules/`. Skip the `.claude/` directory. The CI enforcement (Phase 2), testing standards (Phase 3), and the concepts from Phase 4 all apply regardless of which AI tool generates the code.
 
-Include these in CLAUDE.md, .cursorrules, and any other context file. These are non-negotiable:
+---
 
-| # | Rule | Why |
-|---|------|-----|
+## The 10 Agent Rules
+
+These rules go in every context file -- `CLAUDE.md`, `.cursorrules`, `.github/copilot-instructions.md`. They're the behavioral contract between you and the AI:
+
+| # | Rule | Why It Matters |
+|---|------|----------------|
 | 1 | **Read before writing** | Don't create a file that already exists. Don't rewrite a function without reading its callers. |
-| 2 | **Plan before coding** (3+ files) | If a change touches 3 or more files, write a plan first. List the files, the changes, the order. |
-| 3 | **Small PRs only** | Max 10 files, 300 lines changed. No exceptions. Split larger work into stacked PRs. |
-| 4 | **Match existing patterns** | Find a similar file in the codebase and follow its structure exactly. Don't invent. |
-| 5 | **Test every change** | Every source file change needs a corresponding test. No "I'll add tests later." |
-| 6 | **Run checks locally** | Type-check, lint, and test before pushing. The CI should never be the first to catch errors. |
-| 7 | **Never force push** | No `git push --force`. No `git reset --hard`. No exceptions. |
-| 8 | **Ask when uncertain** | If unsure about architecture, naming, or scope -- stop and ask. Don't guess. |
+| 2 | **Plan before coding** (3+ files) | If a change touches 3+ files, write a plan first. List files, changes, order. |
+| 3 | **Small PRs only** | Max 10 files, 300 lines. Split larger work into stacked PRs. |
+| 4 | **Match existing patterns** | Find a similar file in the codebase and follow its structure. Don't invent. |
+| 5 | **Test every change** | Every source file change gets a corresponding test. No "I'll add tests later." |
+| 6 | **Run checks locally** | Type-check, lint, and test before pushing. CI shouldn't be the first to catch errors. |
+| 7 | **Never force push** | No `--force`. No `reset --hard`. No exceptions. |
+| 8 | **Ask when uncertain** | Unsure about architecture, naming, or scope? Stop and ask. Don't guess. |
 | 9 | **Parallel execution** | Independent tasks run simultaneously. Never serialize what can parallelize. |
-| 10 | **Change budget** | Track lines and files. Warn at 200 lines / 7 files. Split at 300 lines / 10 files. |
+| 10 | **Change budget** | Track lines and files. Warn at 200 lines / 7 files. Split at 300 / 10. |
 
-### 1.4 Spec Template
-
-Create `specs/_TEMPLATE.md` for feature work:
-
-```markdown
-# Feature Name
-
-## Problem
-What user problem does this solve? Why now?
-
-## Solution
-High-level approach. 3-5 bullets max.
-
-## Acceptance Criteria
-- [ ] Specific, testable criteria
-- [ ] Including edge cases
-- [ ] And error states
-
-## Out of Scope
-- What this PR does NOT do (prevents scope creep)
-
-## Dependencies
-- Other PRs, services, or data this depends on
-
-## PR Plan
-If large: how to split into <=10-file PRs
-```
-
-### 1.5 Session State Files
-
-AI conversations have limited context windows. When a session ends mid-task or you pick up work the next day, the AI starts from zero. Session state files solve this by giving the AI a persistent, human-readable record of what's done, what's left, and what went wrong.
-
-**Structure:**
-
-```
-memory/
-  session-flow.md          # Index — which repos, current priorities, what to do next
-  session-signalboard.md   # Per-repo state
-  session-pebble.md
-```
-
-**`session-flow.md`** (the index):
-
-```markdown
-# Session Flow
-
-## Active Repos
-- **Signalboard** → [session-signalboard.md](session-signalboard.md) — Level 4.5 complete
-- **Pebble** → [session-pebble.md](session-pebble.md) — visual CI done, unit tests next
-
-## Next Session Priorities
-1. Pebble: frontend unit tests (zero exist in apps/web)
-2. Pebble: generate visual baselines from CI
-3. Diggit: apply Phase 1-2
-
-## Cross-Repo Notes
-- All repos use conventional commits, target dev/development branch
-- Visual baselines must be generated in CI (Linux), never committed from local
-```
-
-**`session-{repo}.md`** (per-repo):
-
-```markdown
-# Session: Pebble
-
-## Done
-- [x] CLAUDE.md with full standards
-- [x] CI review workflow (PR size + test coverage gates)
-- [x] Visual regression — 17 smoke tests, 15 baselines
-- [x] JWT_SECRET mismatch fix (backend + frontend must share same secret)
-
-## Todo
-- [ ] Frontend unit tests (apps/web has zero)
-- [ ] @core visual tests (need auth + database seed helpers)
-- [ ] Main ↔ development branch sync
-
-## Blockers
-- Pre-existing type errors in @pebble/backend (swagger docs) — must fix before enabling strict CI
-
-## Session Log
-- 2026-03-10: Created visual test infra, PR #134 merged
-- 2026-03-11: Fixed JWT mismatch, added cursor config, PR #166
-- 2026-03-12: Debugged admin auth locally — cookie is set but middleware can't verify JWT when secrets differ
-```
-
-**Why this works:**
-
-- **New conversations start informed**: The AI reads session files and knows exactly where you left off
-- **Human-readable**: You can review and edit state between sessions — it's just markdown
-- **Prevents duplicate work**: "Already merged PR #134" stops the AI from redoing visual test infra
-- **Captures tribal knowledge**: Blockers and session logs preserve context that git history doesn't (e.g., "JWT mismatch causes admin redirect" isn't in any commit message)
-
-**Where to store them:**
-
-- Claude Code: `.claude/memory/` or a dedicated `memory/` directory configured via project settings
-- The session files are for AI continuity, not for the repo itself — consider `.gitignore`-ing them or keeping them in a separate location
-
-### 1.6 Push to Your Dev Branch
-
-This is the most commonly missed step. CLAUDE.md must exist on whatever branch agents will branch from. If your team works off `dev` and CLAUDE.md only exists on `main`, agents branching from `dev` won't see it.
-
-Push context files to **both** `main` and your active development branch.
+These aren't aspirational. They're extracted from hundreds of AI-assisted commits across production codebases. Every rule exists because we watched an AI agent violate it and create real problems.
 
 ---
 
-## Phase 2: CI Enforcement
+## How to Apply This to Your Repo
 
-Rules without enforcement are suggestions. Every standard from Phase 1 needs a CI gate.
+### Quick Start (30 minutes -- Phase 1 only)
 
-### 2.1 PR Review Automation
+This gets you immediate improvement in AI output quality.
 
-Create `.github/workflows/ci-review.yml`:
-
-```yaml
-name: PR Review
-
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-
-jobs:
-  pr-size-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Check PR size
-        run: |
-          FILE_COUNT=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
-          echo "Changed files: $FILE_COUNT"
-
-          if [ "$FILE_COUNT" -gt 30 ]; then
-            echo "::error::PR touches $FILE_COUNT files (max: 30). Split into smaller PRs."
-            exit 1
-          elif [ "$FILE_COUNT" -gt 10 ]; then
-            echo "::warning::PR touches $FILE_COUNT files. Consider splitting."
-          fi
-
-  test-coverage-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Check test coverage for changed files
-        run: |
-          CHANGED_SOURCE=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
-            | grep -E '\.(ts|tsx|js|jsx|py)$' \
-            | grep -vE '(test|spec|__tests__|\.config\.|\.d\.ts)' \
-            | grep -vE '(layout|page|middleware|loading|error|not-found)\.' || true)
-
-          MISSING_TESTS=""
-          for file in $CHANGED_SOURCE; do
-            dir=$(dirname "$file")
-            base=$(basename "$file" | sed 's/\.\(ts\|tsx\|js\|jsx\|py\)$//')
-            if ! git diff --name-only origin/${{ github.base_ref }}...HEAD \
-              | grep -qE "(${base}\.test|${base}\.spec|${base}_test)"; then
-              MISSING_TESTS="$MISSING_TESTS\n- $file"
-            fi
-          done
-
-          if [ -n "$MISSING_TESTS" ]; then
-            echo "::error::Source files changed without corresponding test files:$MISSING_TESTS"
-            exit 1
-          fi
-
-  ai-review:
-    # Posts a checklist comment: missing tests, UI screenshot reminder,
-    # config/secret exposure check, scope check.
-    # IMPORTANT: Updates existing comment instead of creating new ones (prevents spam).
-    # See templates/ci-review.yml.template for full implementation.
-    runs-on: ubuntu-latest
-    if: github.event.action == 'opened' || github.event.action == 'reopened'
-    permissions:
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: AI Review Checklist
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            const files = execSync(
-              `git diff --name-only origin/${{ github.base_ref }}...HEAD`
-            ).toString().trim().split('\n');
-            const checks = [];
-            const srcFiles = files.filter(f => /\.(ts|tsx|js|jsx|py)$/.test(f));
-            const testFiles = files.filter(f => /(test|spec)/.test(f));
-            if (srcFiles.length > 0 && testFiles.length === 0)
-              checks.push('- [ ] **Missing tests**');
-            else checks.push('- [x] **Tests included**');
-            if (files.some(f => /\.(tsx|jsx|vue)$/.test(f)))
-              checks.push('- [ ] **UI changes**: Add screenshots');
-            if (files.some(f => /\.(env|json|ya?ml)$/.test(f)))
-              checks.push('- [ ] **Config changed**: Check for secrets');
-            checks.push(`- [ ] **${files.length} files**: Scope appropriate?`);
-            const body = `## AI Review Checklist\n\n${checks.join('\n')}`;
-            // Upsert: update existing comment or create new
-            const { data: comments } = await github.rest.issues.listComments({
-              ...context.repo, issue_number: context.issue.number });
-            const existing = comments.find(c => c.body.includes('AI Review Checklist'));
-            const method = existing ? 'updateComment' : 'createComment';
-            const params = existing
-              ? { ...context.repo, comment_id: existing.id, body }
-              : { ...context.repo, issue_number: context.issue.number, body };
-            await github.rest.issues[method](params);
-```
-
-### 2.2 Pre-Push Hook
-
-Create `.githooks/pre-push`:
+**Step 1: Create your context files.**
 
 ```bash
-#!/bin/sh
-
-# Skip for merge commits
-MERGE_COMMIT=$(git log --oneline -1 | grep -c "Merge")
-if [ "$MERGE_COMMIT" -gt 0 ]; then
-  echo "Merge commit detected, skipping pre-push checks."
-  exit 0
-fi
-
-echo "Running pre-push checks..."
-
-# Type check
-echo "Type checking..."
-npm run type-check || { echo "Type check failed. Push aborted."; exit 1; }
-
-# Unit tests
-echo "Running tests..."
-npm run test || { echo "Tests failed. Push aborted."; exit 1; }
-
-echo "All checks passed."
-```
-
-Add setup instructions to CLAUDE.md:
-
-```bash
-git config core.hooksPath .githooks
-```
-
-For repos using Husky, configure it in `package.json` or `.husky/pre-push` instead.
-
-### 2.3 GitHub Repository Settings
-
-Configure these manually or via the GitHub API:
-
-- **Auto-merge**: Settings > General > Allow auto-merge
-- **Auto-delete head branches**: Settings > General > Automatically delete head branches
-- **Branch protection on dev** (or your primary development branch):
-  - Require status checks to pass (your CI jobs)
-  - Require at least 1 approval
-  - These are required for auto-merge to gate properly
-
-**CODEOWNERS** (`.github/CODEOWNERS`):
-
-```
-# Default owner for everything
-* @your-github-username
-```
-
----
-
-## Phase 3: Testing Standards
-
-AI agents are prolific test writers -- but they write bad tests by default. `.toBeDefined()` passes even when the code is broken. Empty test bodies give false green. You need explicit quality rules.
-
-### 3.1 Test Quality Rules
-
-Enforce these in CLAUDE.md, .cursorrules, and code review:
-
-| Bad | Good | Why |
-|-----|------|-----|
-| `expect(result).toBeDefined()` | `expect(result).toEqual({ id: 1, name: "test" })` | `.toBeDefined()` passes for any non-undefined value |
-| `expect(component).toBeTruthy()` | `expect(screen.getByRole('button')).toBeInTheDocument()` | Test what the user sees |
-| `it('should work', () => {})` | `it('shows error when email is invalid', () => { ... })` | Empty tests always pass |
-| `expect(mockFn).toHaveBeenCalled()` | `expect(screen.getByText('Saved!')).toBeInTheDocument()` | Test behavior, not implementation |
-
-Additional rules:
-
-- Test edge cases: empty arrays, null values, error responses, permission denied
-- Don't over-mock: let real child components render when testing parents
-- One assertion concept per test (multiple `expect()` calls are fine if testing one behavior)
-- Name tests by behavior: "shows error when...", "redirects to...", "disables button when..."
-
-### 3.2 Visual Regression Testing
-
-For any project with a UI, visual regression tests catch what unit tests miss: layout breaks, font changes, color regressions, responsive issues.
-
-**Three-tier approach:**
-
-| Tier | Tag | What | Data | Runs On |
-|------|-----|------|------|---------|
-| Smoke | `@smoke` | Unauthenticated pages (login, marketing, 404) | None | Every PR |
-| Core | `@core` | Authenticated list/dashboard pages | Seeded via test infra | Every PR |
-| Full | (all) | Detail pages, modals, multi-step flows | Rich seed data | Push to dev + nightly |
-
-**Playwright config (`playwright.visual.config.ts`):**
-
-```typescript
-import { defineConfig } from '@playwright/test';
-
-export default defineConfig({
-  testDir: './e2e/visual',
-  fullyParallel: true,
-  use: {
-    viewport: { width: 1440, height: 900 },
-    // Disable animations for deterministic screenshots
-    launchOptions: {
-      args: ['--force-prefers-reduced-motion'],
-    },
-  },
-  expect: {
-    toHaveScreenshot: {
-      maxDiffPixelRatio: 0.01,
-      animations: 'disabled',
-    },
-  },
-});
-```
-
-**Critical rules:**
-
-- **Linux-only baselines**: macOS and Linux render fonts differently. Always generate baselines in CI (Ubuntu), never commit local screenshots.
-- **Self-contained infrastructure**: Visual tests need their own database (Postgres service container), auth (Firebase emulator or equivalent), and seed data. No dependency on external services.
-- **Generate baselines via CI workflow**: Create a `visual-baselines.yml` workflow that runs on `workflow_dispatch`, generates screenshots, and commits them.
-
-**CI integration:**
-
-```yaml
-# In your main CI workflow
-visual-pr:
-  if: github.event_name == 'pull_request'
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v4
-    - run: npx playwright install --with-deps chromium
-    - run: npx playwright test --config=playwright.visual.config.ts --grep '@smoke|@core'
-
-visual-full:
-  if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v4
-    - run: npx playwright install --with-deps chromium
-    - run: npx playwright test --config=playwright.visual.config.ts
-```
-
-**Nightly regression**: Create a scheduled workflow (`cron: '0 6 * * *'`) that runs the full visual suite against dev. On failure, upload diff artifacts and auto-create a GitHub issue. See `templates/nightly-visual.yml.template` for the full workflow.
-
-### 3.3 Test Coverage Enforcement
-
-The `test-coverage-check` job from Phase 2 maps changed source files to test files and blocks the PR if any are missing. The pre-push hook catches it even earlier.
-
----
-
-## Phase 4: Workflow Skills
-
-Skills are reusable instructions that tell AI agents how to handle common workflows. In Claude Code, these live in `.claude/commands/` (user-triggered) and `.claude/agents/` (sub-agent instructions). The key insight: **skills should auto-trigger based on intent, not slash commands.**
-
-### 4.1 /idea -- Feature Implementation
-
-Auto-triggers when the user describes something to build ("add a notification system", "we need a settings page").
-
-**Flow:**
-
-1. Draft an inline spec (5 bullets max, not a full document)
-2. Ask 1-3 clarifying questions (batched, not serial). Skip if the intent is clear.
-3. Create a feature branch from dev: `git checkout -b feature/TICKET-123-short-desc dev`
-4. Implement with parallel agents when work spans multiple files/domains
-5. Track change budget throughout -- warn at 200 lines, split at 300
-
-Place this in `.claude/commands/idea.md` -- the skill file should contain the flow above as agent instructions. The key behaviors: draft spec first, estimate size, propose splits for large work, track budget during implementation.
-
-### 4.2 /ship -- Push and PR
-
-Auto-triggers when the user says "push it", "ship it", "looks good", "LGTM".
-
-**Flow:**
-
-1. Map every changed source file to a test file. Write missing tests.
-2. Run type-check, lint, tests locally.
-3. Commit specific files (never `git add .` or `git add -A`).
-4. Push and create PR with descriptive title and body.
-5. Report summary: files changed, tests added, PR link.
-
-### 4.3 /continue -- Stacked PRs
-
-Auto-triggers when the user continues building after a PR is created.
-
-**Flow:**
-
-1. Create a new branch **from the current branch** (not from dev). This is the stacking mechanism.
-2. The PR for this branch targets the previous branch, which prevents out-of-order merges.
-3. Reset the change budget for the new PR.
-
-### 4.4 Always-Active Rules
-
-These aren't skills -- they're behaviors that should be active at all times:
-
-- **Parallel execution**: If 3 tasks are independent, fire 3 agents in one message. Never serialize what can parallelize.
-- **Prefer parallel PRs over stacked**: If work touches non-overlapping files, branch independently from dev. Only stack when PR B depends on code from PR A.
-- **Change budget tracking**: Continuously track lines and files. The agent should self-interrupt when approaching limits.
-- **Visual tests at the finish line only**: Don't update baselines during iteration. Run them once when the feature is complete.
-
-### 4.5 Agent Teams for Large Work
-
-When a task naturally breaks into 3+ independent workstreams, use agent teams instead of sequential work.
-
-**When to use teams:**
-
-- Test retrofit (audit the codebase, then N agents write tests in parallel)
-- Multi-feature sprints (each feature gets its own agent + branch)
-- Any batch of non-overlapping PRs
-
-**Pattern:**
-
-```
-1. Create a task list for the work
-2. Create git worktrees: one per workstream
-   git worktree add /tmp/project-task-a dev -b feature/task-a
-   git worktree add /tmp/project-task-b dev -b feature/task-b
-3. Spawn one agent per worktree
-4. Each agent works independently in its own directory
-5. On completion: verify branch, run tests, push, create PR
-6. Clean up worktrees: git worktree remove /tmp/project-task-a
-```
-
-**Why worktrees**: Multiple agents can't work in the same git checkout without stepping on each other. Worktrees give each agent an isolated working directory while sharing the same repository.
-
-**Watch out for:**
-
-- Create worktrees **before** spawning agents (the directory must exist)
-- Verify the branch name after each agent completes (agents sometimes commit to the wrong branch)
-- Always clean up worktrees when done
-
----
-
-## Lessons Learned
-
-These are from applying the playbook across three production codebases. Every lesson was learned the hard way.
-
-1. **Always `git pull` before branching.** A previous session may have pushed work you don't know about. We duplicated an entire batch of PRs because the branch was 125 commits behind dev.
-
-2. **Rules without enforcement are suggestions.** CLAUDE.md said "tests required" but nothing blocked merging without them. Always pair rules with CI gates (Phase 2).
-
-3. **Agent prompts must explicitly say "write tests."** If you tell an agent "implement this feature," it will implement the feature and skip tests. Every time. The instruction must be explicit.
-
-4. **Worktree branch management is fragile.** Agents committed to wrong branches, stashes got tangled. Verify the branch after every agent completes.
-
-5. **Fix weak tests before writing more.** We had 655 tests but many used `.toBeDefined()`, which passes even when code is broken. Quality over quantity.
-
-6. **Push context files to your active dev branch.** Feature branches inherit from the base. If CLAUDE.md is only on main and agents branch from dev, they don't see it.
-
-7. **Don't demo velocity without quality.** Shipping 4 PRs with zero tests looks fast but is tech debt with a bow on it.
-
----
-
-## Getting Started
-
-### Quick Start (30 minutes)
-
-**Step 1: Copy the foundation files to your repo.**
-
-```bash
-# Clone the playbook
-git clone https://github.com/nebaricc/ai-native-dev-playbook.git /tmp/ai-native-playbook
-
-# Copy templates to your project
-cp /tmp/ai-native-playbook/templates/CLAUDE.md.template ./CLAUDE.md
-cp /tmp/ai-native-playbook/templates/cursorrules.template ./.cursorrules
-mkdir -p .claude .cursor/rules .githooks specs
-
-cp /tmp/ai-native-playbook/templates/settings.json.template ./.claude/settings.json
-cp /tmp/ai-native-playbook/templates/spec-template.md ./specs/_TEMPLATE.md
-cp /tmp/ai-native-playbook/templates/pre-push.template ./.githooks/pre-push
-chmod +x .githooks/pre-push
+# Clone the playbook for templates
+git clone https://github.com/nebaricc/ai-native-dev-playbook.git /tmp/playbook
+
+# Copy and customize
+cp /tmp/playbook/templates/CLAUDE.md ./CLAUDE.md
+cp /tmp/playbook/templates/.cursorrules ./.cursorrules
+mkdir -p .claude .cursor/rules specs
+
+cp /tmp/playbook/templates/.claude/settings.json ./.claude/settings.json
+cp /tmp/playbook/templates/specs/_TEMPLATE.md ./specs/_TEMPLATE.md
 ```
 
 **Step 2: Customize for your stack.**
 
-Edit CLAUDE.md with your:
-- Project name and description
-- Tech stack and package manager
-- Build/test/lint commands
-- Git branch strategy and conventions
-- Architecture patterns specific to your codebase
+Edit `CLAUDE.md` and `.cursorrules` with:
+- Your project name, tech stack, and package manager
+- Your actual build/test/lint commands
+- Your git branch strategy (what branch do PRs target?)
+- Your naming conventions and architecture patterns
+- The 10 agent rules (copy from the template)
 
-Edit `.claude/settings.json` with your actual test and build commands.
+Edit `.claude/settings.json` with your actual commands (replace `npm` with `pnpm`, `vitest` with `jest`, etc.).
 
-**Step 3: Push to your dev branch and enable hooks.**
+**Step 3: Add file-scoped rules** for your most common file types.
+
+Copy examples from `templates/.cursor/rules/` and customize the globs and conventions for your project. Common ones: `tests.mdc`, `components.mdc`, `api-routes.mdc`.
+
+**Step 4: Push to your active development branch.**
 
 ```bash
-git config core.hooksPath .githooks
-git add CLAUDE.md .cursorrules .claude/ .cursor/ .githooks/ specs/
+git config core.hooksPath .githooks  # if using git hooks
+git add CLAUDE.md .cursorrules .claude/ .cursor/ specs/
 git commit -m "chore: add AI-native development configuration"
-git push origin dev
+git push origin dev  # push to YOUR dev branch, not just main
 ```
 
-### Full Setup (2-4 hours)
+> **Common mistake:** Pushing context files only to `main`. If your team branches from `dev`, agents on feature branches won't see `CLAUDE.md`. Push to both `main` and your active development branch.
 
-Follow Phases 1-4 in order. Each phase builds on the previous:
+**Step 5: Verify it works.**
 
-1. **Phase 1** (30 min): Context files, agent rules, spec template
-2. **Phase 2** (1 hour): CI workflows, pre-push hooks, GitHub settings
-3. **Phase 3** (1 hour): Test quality rules, visual regression setup, coverage gates
-4. **Phase 4** (30 min): Workflow skills, agent team patterns
+Ask your AI tool to create a new feature (a new API endpoint, a new component, a new test). Does the output match your patterns? If not, whatever it got wrong is a missing rule in your context files. Add it and test again.
+
+### Full Setup (1-2 days -- all 4 phases)
+
+Each phase builds on the previous. Detailed implementation guides:
+
+| Phase | Guide | Time | What You Get |
+|-------|-------|------|--------------|
+| 1. Context as Code | [docs/phase-1-context.md](docs/phase-1-context.md) | 1-2 hours | AI knows your project |
+| 2. CI Enforcement | [docs/phase-2-ci.md](docs/phase-2-ci.md) | 2-4 hours | Standards are enforced |
+| 3. Testing Standards | [docs/phase-3-testing.md](docs/phase-3-testing.md) | 4-8 hours | AI tests catch real bugs |
+| 4. Workflow Skills | [docs/phase-4-workflows.md](docs/phase-4-workflows.md) | 2-4 hours | AI follows your process |
+
+Additional deep dives:
+- [Multi-tool setup](docs/multi-tool-setup.md) -- Claude Code + Cursor + Copilot alignment
+- [Visual regression testing](docs/visual-testing.md) -- Playwright screenshot testing for UI projects
+- [Session state files](docs/session-state.md) -- Cross-session continuity for AI assistants
+- [Lessons learned](docs/lessons-learned.md) -- What went wrong and how we fixed it
+- [FAQ](docs/faq.md) -- Common questions answered
 
 ---
 
-## Templates
+## What's in This Repo
 
-The `templates/` directory contains starter files you can copy and customize:
+```
+README.md                           # You are here
+docs/
+  phase-1-context.md                # Full Phase 1 guide with code examples
+  phase-2-ci.md                     # CI workflows, hooks, GitHub settings
+  phase-3-testing.md                # Test quality rules, visual regression
+  phase-4-workflows.md              # Workflow skills, agent teams, worktrees
+  multi-tool-setup.md               # Claude + Cursor + Copilot config alignment
+  visual-testing.md                 # Playwright visual regression deep dive
+  session-state.md                  # Cross-session memory for AI assistants
+  lessons-learned.md                # Battle stories from 3 production repos
+  faq.md                            # Common questions
+templates/
+  CLAUDE.md                         # Parameterized context file template
+  .cursorrules                      # Standalone Cursor rules template
+  .claude/settings.json             # Claude Code permissions template
+  .claude/commands/                 # /idea, /ship, /continue skill templates
+  .claude/skills/                   # Code style and quality skill templates
+  .cursor/rules/                    # File-scoped rule templates (.mdc)
+  .github/workflows/                # CI review and nightly visual regression
+  specs/_TEMPLATE.md                # Feature spec template
+  session-flow.md                   # Session state index template
+  session-repo.md                   # Per-repo session state template
+examples/
+  firebase-app/                     # Next.js + Firebase monorepo example
+  nextjs-monorepo/                  # pnpm workspace (Next.js + NestJS) example
+  django-api/                       # Django REST API example
+```
 
-| File | Description |
-|------|-------------|
-| `CLAUDE.md.template` | Root context file with all sections pre-structured |
-| `cursorrules.template` | Standalone Cursor rules (not a reference to CLAUDE.md) |
-| `settings.json.template` | Claude Code permissions with sensible defaults |
-| `ci-review.yml.template` | GitHub Actions workflow for PR review automation |
-| `pre-push.template` | Git hook for pre-push type-check and tests |
-| `spec-template.md` | Feature spec template (Problem/Solution/AC/Scope) |
-| `playwright.visual.config.template.ts` | Playwright config for visual regression |
-| `nightly-visual.yml.template` | Nightly visual regression workflow |
-| `cursor-rules/` | Example .mdc files for common file types |
-| `session-flow.md` | Session state index template |
-| `session-repo.md` | Per-repo session state template |
+---
 
-## Examples
+## Lessons Learned (The Short Version)
 
-The `examples/` directory contains real-world configurations from production repos:
+These are from applying the playbook across three production codebases. Every lesson was learned the hard way. [Full details →](docs/lessons-learned.md)
 
-| Directory | Description |
-|-----------|-------------|
-| `examples/firebase-app/` | Next.js + Firebase monorepo (CLAUDE.md, CI, visual tests) |
-| `examples/nextjs-monorepo/` | pnpm workspace with NestJS + Next.js (CLAUDE.md, Cursor rules) |
-| `examples/django-api/` | Django REST API (CLAUDE.md, settings) |
+1. **Rules without enforcement are suggestions.** CLAUDE.md said "tests required." Nothing blocked merging without them. Always pair rules with CI gates.
+2. **Agent prompts must explicitly say "write tests."** "Implement this feature" means the AI skips tests. Every time.
+3. **Fix weak tests before writing more.** We had 655 tests. Many used `.toBeDefined()`, which passes when code is broken. Quality over quantity.
+4. **Push context files to your dev branch.** If CLAUDE.md only exists on `main` and agents branch from `dev`, they don't see it.
+5. **Always `git pull` before branching.** We duplicated an entire batch of PRs because the branch was 125 commits behind.
+6. **Don't demo velocity without quality.** Shipping 4 PRs with zero tests looks fast but creates more work than it saves.
+7. **Verify agent work -- don't trust green checkmarks.** Agents report success. Check the actual output.
 
 ---
 
 ## Contributing
 
-This playbook is opinionated by design. If you've applied it to a stack not covered here (Rails, Go, Swift, etc.), open a PR with the stack, what worked, what you adapted, and example configs.
+This playbook is opinionated by design. If you've applied it to a stack not covered here (Rails, Go, Swift, Rust, etc.), we want your experience:
+
+- What worked out of the box
+- What you had to adapt
+- Example config files for your stack
+
+Open a PR or start a discussion.
 
 ---
 
@@ -698,4 +252,4 @@ MIT
 
 ---
 
-*Created by [Nebari Consulting](https://nebari.io). Built from real experience across 3 client engineering teams, 13+ merged PRs per repo, and hundreds of AI-assisted commits.*
+*Created by [Nebari Consulting](https://nebari.io). Built from real experience across 3 client engineering teams, 40+ merged PRs, and hundreds of AI-assisted commits in early 2026.*
