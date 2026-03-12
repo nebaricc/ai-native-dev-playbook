@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/hero-banner.svg" alt="AI-Native Development Playbook — Context, Enforcement, Testing, Workflow" width="100%">
+</p>
+
 # AI-Native Development Playbook
 
 **A battle-tested system for making AI coding assistants produce production-quality work.**
