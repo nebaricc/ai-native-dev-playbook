@@ -256,4 +256,4 @@ MIT
 
 ---
 
-*Created by [Nebari Consulting](https://nebari.io). Built from real experience across 3 client engineering teams, 40+ merged PRs, and hundreds of AI-assisted commits in early 2026.*
+*Created by [Nebari Consulting](https://nebari.cc). Built from real experience across 3 client engineering teams, 40+ merged PRs, and hundreds of AI-assisted commits in early 2026.*
