@@ -427,6 +427,128 @@ of one. The speed multiplier works in both directions.
 
 ---
 
+## 11. Multi-Repo Session Scope Bites You Silently
+
+When working across multiple repos in one Claude Code session, agents will silently fail to write files if they're outside the session's working directory. The agent reports success, the file never appears.
+
+**Root cause**: Claude Code scopes file and bash permissions to the directory it was launched from. A session launched from `~/dev/pebble` cannot write to `~/dev/signalboard`.
+
+**Fix**: Launch from the common parent directory (`cd ~/dev && claude`), or use separate Claude Code sessions — one per repo. When using parallel agents on cross-repo work, verify each agent's target path is within scope before launching.
+
+**How to detect it**: If an agent says it wrote files but they don't appear, check whether the target path is inside the session's working directory.
+
+---
+
+## 12. Skills Beat Rules When It Comes to Security and Compliance
+
+Putting security requirements in CLAUDE.md as bullet points does not work. The agent reads them once and proceeds. By the time it's writing a new endpoint, the security rules are out of context.
+
+What works: dedicated `security/` and `compliance/` skill files, explicitly mandated in CLAUDE.md with "load this before every feature." The skill file is loaded fresh when it's relevant. The mandate in CLAUDE.md makes loading it non-optional.
+
+Even better: break compliance into sub-skills (`compliance/ferpa.md`, `compliance/coppa.md`) so only the relevant piece is loaded. A K-12 platform building a student feature loads FERPA rules. Building a payment feature loads PCI rules. The agent gets targeted context, not an overwhelming dump of every regulation.
+
+The pattern: CLAUDE.md says *what* to load and *when*. The skill file contains *how* to comply.
+
+---
+
+## 13. GitHub Secrets Belong at the Environment Level, Not the Repo Level
+
+Early in one engagement, we stored all CI/CD credentials as repo-level GitHub
+secrets with environment prefixes: `PROD_WIF_PROVIDER`, `STAGE_WIF_PROVIDER`,
+`PROD_DATABASE_URL`, and so on. The naming convention felt organized. It was not
+secure.
+
+Repo-level secrets are accessible to any workflow in the repository, on any
+branch. A workflow on a feature branch, a dependency update PR, or a third-party
+GitHub Action could all read `PROD_WIF_PROVIDER`. The prefix in the name does not
+create any access boundary — it is just a label.
+
+GitHub Environments (Settings → Environments → `production`, `staging`,
+`development`) solve this properly. Secrets stored at the environment level are
+only available to workflow jobs that explicitly declare `environment: production`.
+Combined with environment protection rules (required reviewers, deployment branch
+restrictions), this means prod credentials are gated by both the code and GitHub's
+access control layer.
+
+The fix is structural:
+- Create GitHub environments for each deployment target
+- Move secrets from repo-level to the appropriate environment
+- Drop the prefix from secret names — `WIF_PROVIDER` resolves to the right value
+  per environment automatically
+- Remove the old repo-level secrets once environments are set up
+
+The tell that you have this wrong: secret names with environment prefixes
+(`PROD_*`, `STAGE_*`). The prefix is a sign the secret is at the wrong scope.
+
+
+## 14. Public Config Does Not Belong in Secrets
+
+Firebase web SDK configuration — `apiKey`, `authDomain`, `projectId`, `appId` —
+is public by design. Firebase's security model explicitly states that these
+values are safe to commit and expose to browsers. The `NEXT_PUBLIC_` prefix in
+Next.js exists precisely for this pattern: values that are intentionally
+client-side.
+
+We had all of these in GitHub secrets. `NEXT_PUBLIC_FIREBASE_API_KEY`,
+`STAGE_FIREBASE_API_KEY`, `PROD_FIREBASE_API_KEY`, and so on. Eighteen secrets
+that needed to be rotated, audited, and kept in sync, for values that are safe
+to put in a committed `.env.dev` file.
+
+The fix: committed per-environment config files (`.env.dev`, `.env.stage`,
+`.env.prod`) contain public Firebase config. CI workflows copy the right file
+for the environment during build. No secrets needed. The values are visible in
+the repository, which is correct — they are not secrets.
+
+Before storing something in GitHub secrets, ask: what is the actual harm if
+this value is read by someone who shouldn't have it? If the answer is "none"
+— because it's already in your client-side bundle, or because it's a project
+identifier, not an authorization credential — it does not belong in secrets.
+Secrets are for things that authorize access. Config is for things that
+identify services.
+
+
+## 15. Firebase Admin SDK on the Backend Is Often Unnecessary
+
+Firebase Admin SDK is the standard recommendation for verifying Firebase Auth
+tokens on the backend. The documentation says to use it. Most tutorials use it.
+We used it for months.
+
+Then we asked: what does it actually do? It verifies JWTs. Firebase ID tokens
+are standard JWTs signed by Google's Secure Token Service. The signing keys are
+published at a public JWKS endpoint. Any JWT library can verify them without
+the Admin SDK.
+
+```typescript
+// jose is already in most backends. No firebase-admin needed.
+const FIREBASE_JWKS = createRemoteJWKSet(
+  new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com')
+);
+
+const { payload } = await jwtVerify(idToken, FIREBASE_JWKS, {
+  issuer: `https://securetoken.google.com/${projectId}`,
+  audience: projectId,
+});
+```
+
+Removing `firebase-admin` from the backend eliminates a large transitive
+dependency tree (gRPC, protobuf, and more), removes the requirement for ADC
+or service account credentials at runtime, and simplifies testing — no more
+mocking the entire Admin SDK module.
+
+The other thing `firebase-admin` was doing for us: setting custom claims
+(role, school ID) on Firebase users. Replacing this with a database lookup
+on session creation is more correct — roles should live in your database, not
+in your identity provider. Firebase is the authentication layer. Authorization
+data belongs where you own it.
+
+The broader lesson: when a framework SDK does two things and you only need one
+of them, check if the one you need can be done without the SDK. Large SDKs
+carry hidden costs in dependency surface, credential requirements, and test
+complexity. JWT verification is a solved problem. You do not need a Firebase
+package to verify a Firebase token.
+
+---
+
 These lessons will continue to evolve. AI-native development is not a
 solved problem; it is a practice that improves through iteration. The
 playbook, the tooling, and the habits all get better as you learn what
