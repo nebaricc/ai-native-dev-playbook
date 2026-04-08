@@ -4,9 +4,9 @@
 
 # AI-Native Development Playbook
 
-**A battle-tested system for making AI coding assistants produce production-quality work.**
+**A battle-tested system for making AI coding assistants produce production-quality code that follows SOLID, DRY, and Clean Code principles.**
 
-Built from real experience applying AI-assisted development across 3 client engineering teams, 40+ merged PRs, and hundreds of AI-generated commits. Works with Claude Code, Cursor, GitHub Copilot, and whatever ships next.
+Gives your AI agent proper rules and structure: type safety enforcement, line-of-code limits, PR size guards, testing requirements, SOLID architecture, DRY patterns, and Clean Code conventions -- all enforced by CI. Built from real experience applying AI-assisted development across 3 client engineering teams, 40+ merged PRs, and hundreds of AI-generated commits. Works with Claude Code, Cursor, GitHub Copilot, and whatever ships next.
 
 ---
 
@@ -18,6 +18,8 @@ Built from real experience applying AI-assisted development across 3 client engi
 - **Teams using Cursor** who can't access Claude Code (or vice versa) and need tool-agnostic standards
 
 If you've ever watched an AI assistant confidently generate code that doesn't match your patterns, skip your tests, force-push to main, or produce a 500-line PR that touches every file in the repo -- this playbook is your fix.
+
+> **Just want the rules?** Skip straight to the **[Quick Rules Cheat Sheet](docs/quick-rules.md)** -- a copy-paste-ready set of agent rules you can drop into any project in 15 minutes. Covers type safety, code structure, PR limits, testing, security, and the 10 agent behavior rules. No placeholders, no theory.
 
 ---
 
@@ -51,7 +53,7 @@ This playbook has four phases. Each builds on the last:
 
 | Phase | What You Do | What You Get |
 |-------|-------------|--------------|
-| **1. Context as Code** | Add `CLAUDE.md`, `.cursorrules`, settings, and file-scoped rules to your repo | AI knows your stack, patterns, conventions, and constraints before writing a single line |
+| **1. Context as Code** | Add `CLAUDE.md`, `.cursorrules`, settings, and file-scoped rules to your repo | AI knows your stack, patterns, SOLID/DRY/Clean Code conventions, and constraints before writing a single line |
 | **2. CI Enforcement** | Add PR size guards, test coverage gates, pre-push hooks | Standards are enforced automatically -- the AI can't merge bad code even if it tries |
 | **3. Testing Standards** | Define test quality rules, set up visual regression, block weak assertions | AI-generated tests actually catch bugs instead of giving false confidence |
 | **4. Workflow Skills** | Create `/idea`, `/ship`, `/continue` commands that encode your workflow | The AI follows your team's process -- branching, testing, PR creation -- every time |
@@ -99,6 +101,20 @@ Claude Code's equivalent is `.claude/skills/` -- markdown files loaded on-demand
 
 ---
 
+## Code Quality Principles
+
+The playbook encodes these software engineering principles into rules that AI agents actually follow:
+
+- **SOLID Principles** -- Single responsibility per function and module. Open/closed via composition. Interface segregation with small, focused types. Dependency inversion through abstractions.
+- **DRY (Don't Repeat Yourself)** -- Extract shared logic into utilities or hooks. Use generics to avoid type-safe duplication. But prefer duplication over the wrong abstraction -- wait for 3 instances before extracting.
+- **Clean Code** -- Functions under 40 lines. Descriptive names (`isLoading`, `handleSubmit`, not `x` or `tmp`). No dead code, no commented-out blocks. Self-documenting code over comments. Explicit over implicit.
+- **Type Safety** -- Strict mode. No `any`. Explicit return types on exports. Schema validation at boundaries (Zod, etc.).
+- **Testing** -- Every change ships with tests. Strong assertions only (no `.toBeDefined()`). Test behavior, not implementation.
+
+These aren't just guidelines in a doc -- they're enforced by CI gates, pre-push hooks, and the agent behavior rules below. See the [Quick Rules Cheat Sheet](docs/quick-rules.md) for the copy-paste version, or the [Quality Skills Template](templates/.claude/skills/quality/SKILL.md) for the full breakdown.
+
+---
+
 ## The 10 Agent Rules
 
 These rules go in every context file -- `CLAUDE.md`, `.cursorrules`, `.github/copilot-instructions.md`. They're the behavioral contract between you and the AI:
@@ -117,6 +133,23 @@ These rules go in every context file -- `CLAUDE.md`, `.cursorrules`, `.github/co
 | 10 | **Change budget** | Track lines and files. Warn at 200 lines / 7 files. Split at 300 / 10. |
 
 These aren't aspirational. They're extracted from hundreds of AI-assisted commits across production codebases. Every rule exists because we watched an AI agent violate it and create real problems.
+
+---
+
+## Plugins & Skills Ecosystem
+
+Beyond rules and CI gates, Claude Code supports **plugins** that extend the AI's capabilities and **skills** that encode domain knowledge. These are optional but high-leverage additions.
+
+| Plugin | What It Does | Why It Matters |
+|--------|-------------|----------------|
+| **Superpowers** | Structured workflows: brainstorming, TDD, systematic debugging, plan-driven development, verification before completion | Prevents the #1 failure mode: AI jumping straight to code without planning |
+| **Context7** | Live documentation lookup for any library/framework | Eliminates outdated training data issues -- always gets current API docs |
+| **Code Review** | Automated PR review against your project standards | Catches issues before human review |
+| **UI/UX Pro Max** | 50+ design styles, 161 color palettes, 57 font pairings, 161 product types | Elevates AI-generated UI from "generic Bootstrap" to production-grade design |
+| **Gemini Image** | AI image generation (logos, mockups, icons, assets) | Generate visual assets without leaving the development workflow |
+| **Firebase** | Firebase project management, security rules, Cloud Functions | Direct Firebase integration for Firebase-based projects |
+
+See [Plugins & Skills Ecosystem](docs/plugins-and-skills.md) for installation instructions, recommended configurations, and MCP server setup.
 
 ---
 
@@ -183,6 +216,8 @@ Each phase builds on the previous. Detailed implementation guides:
 | 4. Workflow Skills | [docs/phase-4-workflows.md](docs/phase-4-workflows.md) | 2-4 hours | AI follows your process |
 
 Additional deep dives:
+- [Quick Rules Cheat Sheet](docs/quick-rules.md) -- Copy-paste agent rules for any project (start here)
+- [Plugins & Skills Ecosystem](docs/plugins-and-skills.md) -- Claude Code plugins, MCP servers, UI/UX design tools, image generation
 - [Multi-tool setup](docs/multi-tool-setup.md) -- Claude Code + Cursor + Copilot alignment
 - [Visual regression testing](docs/visual-testing.md) -- Playwright screenshot testing for UI projects
 - [Session state files](docs/session-state.md) -- Cross-session continuity for AI assistants
@@ -196,6 +231,8 @@ Additional deep dives:
 ```
 README.md                           # You are here
 docs/
+  quick-rules.md                    # Copy-paste agent rules cheat sheet (start here)
+  plugins-and-skills.md             # Plugin ecosystem, MCP servers, design & image tools
   phase-1-context.md                # Full Phase 1 guide with code examples
   phase-2-ci.md                     # CI workflows, hooks, GitHub settings
   phase-3-testing.md                # Test quality rules, visual regression

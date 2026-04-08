@@ -73,6 +73,28 @@
 # API Layer: {API_LAYER_APPROACH}
 
 # ============================================================
+# CLEAN CODE & DESIGN PRINCIPLES
+# ============================================================
+
+# CLEAN CODE:
+# Max 40 lines per function. Extract helpers if longer. Hard limit.
+# One responsibility per function. If you need "and" to describe it, split it.
+# Descriptive names: isLoading, handleSubmit, getUserById -- not x, tmp, data2.
+# No dead code. No commented-out blocks, unused imports, unreachable branches.
+# No magic numbers. Extract to named constants: MAX_RETRIES = 3, not bare 3.
+
+# DRY (Don't Repeat Yourself):
+# Extract shared logic into utilities/hooks after 3 instances of duplication.
+# Use generics to avoid duplicating type-safe patterns.
+# Prefer duplication over the wrong abstraction. Two similar 5-line blocks > premature helper.
+
+# SOLID:
+# Single Responsibility: each module/function does one thing.
+# Open/Closed: extend via composition (hooks, middleware), not modification.
+# Interface Segregation: small focused interfaces, not god-types.
+# Dependency Inversion: depend on abstractions, inject dependencies.
+
+# ============================================================
 # COMPONENT CONVENTIONS
 # ============================================================
 

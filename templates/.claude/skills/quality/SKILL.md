@@ -37,22 +37,31 @@ describe("ModuleName", () => {
 
 ## Design Principles
 
+### Clean Code
+- **Max 40 lines per function.** If longer, extract helpers. This is a hard limit.
+- **One responsibility per function.** A function that fetches, transforms, and writes should be three functions.
+- **Descriptive names.** `isLoading`, `handleSubmit`, `getUserById` -- not `x`, `tmp`, `data2`.
+- **No dead code.** No commented-out blocks, no unused imports, no unreachable branches. Delete it.
+- **No magic numbers.** Extract to named constants: `const MAX_RETRIES = 3`, not bare `3`.
+- **No nested ternaries.** If the logic needs nesting, use early returns or a helper function.
+
 ### DRY (Don't Repeat Yourself)
 - Extract shared logic into utility functions or hooks.
 - Use generics to avoid duplicating type-safe patterns.
 - But: prefer duplication over the wrong abstraction. Wait for 3 instances before extracting.
 
 ### SOLID
-- **Single Responsibility**: Each module/function does one thing.
-- **Open/Closed**: Extend via composition, not modification.
+- **Single Responsibility**: Each module/function does one thing. If you need "and" to describe it, split it.
+- **Open/Closed**: Extend via composition (hooks, middleware, decorators), not by modifying existing functions.
 - **Liskov Substitution**: Subtypes must be substitutable for their base types.
-- **Interface Segregation**: Prefer small, focused interfaces.
-- **Dependency Inversion**: Depend on abstractions, not concrete implementations.
+- **Interface Segregation**: Prefer small, focused interfaces. `UserAuth` and `UserProfile` over a `User` god-type.
+- **Dependency Inversion**: Depend on abstractions, not concrete implementations. Inject dependencies, don't import singletons.
 
 ### Code Organization
 - Co-locate related code (component + styles + tests + types).
 - Keep modules shallow -- avoid deeply nested directory trees.
 - Barrel exports at module boundaries, not everywhere.
+- **Max file length: 300 lines.** If a file grows beyond this, it's doing too much. Split it.
 
 ## Security Rules
 

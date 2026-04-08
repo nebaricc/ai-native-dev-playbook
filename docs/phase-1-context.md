@@ -444,6 +444,30 @@ Session files capture the context that makes the next session productive instead
 
 ---
 
+## Recommended Skill Set
+
+A mature project should have at minimum these skills under `.claude/skills/`:
+
+| Skill | Load when... | Notes |
+|---|---|---|
+| `architecture/` | Building any feature | Patterns, data flow, component structure |
+| `code-style/` | Writing or reviewing code | TypeScript, naming, import order |
+| `quality/` | Writing tests or reviewing | Assertions, DRY/SOLID, coverage |
+| `security/` | **Every feature** | Auth, secrets, multi-tenancy checklist |
+| `sre/` | Backend features, infra changes | Observability, stateless constraints, health |
+| `compliance/` | Any user data feature | Audit logging, data privacy, regulatory |
+| `deploy/` | Deploy or infra work | CI/CD, scripts, environment layout |
+| `database/` | Schema or query work | Migrations, query patterns, conventions |
+| `visual-testing/` | UI changes | Playwright, baselines, tiers |
+
+**Security and compliance are loaded proactively** — explicitly mandate them in CLAUDE.md, not just make them available. The agent won't load them voluntarily unless told to.
+
+**Sub-skills over monolithic files**: when a skill grows past ~100 lines, split it. The compliance skill, for example, becomes `compliance/data-privacy.md`, `compliance/pci.md`, etc. — each loaded only when relevant. This keeps context tight and prevents the agent from loading irrelevant rules.
+
+**Multi-repo sessions**: Claude Code permissions are scoped to the directory it was launched from. To work across multiple repos in one session, launch from the common parent (e.g. `cd ~/dev && claude`). If launched from a single repo, agents cannot write to sibling repos — open separate sessions per repo instead.
+
+---
+
 ## Push to dev branch
 
 This is the most commonly missed step. If your team works off a `dev` (or `develop` or `development`) branch, CLAUDE.md must exist on that branch. Feature branches are created from the dev branch, not from main. If CLAUDE.md only exists on main, agents working on feature branches never see it.

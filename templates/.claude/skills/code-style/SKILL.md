@@ -31,7 +31,9 @@ Organize imports in this order, separated by blank lines:
 - Prefer `const` arrow functions for components and callbacks.
 - Use `function` declarations for top-level utility functions (hoisting benefits).
 - Destructure parameters and props.
-- Keep functions under 40 lines. Extract helpers for longer logic.
+- **Max 40 lines per function.** This is a hard limit. Extract helpers for longer logic.
+- **Max 4 parameters per function.** Use an options object for more: `createUser({ name, email, role })`.
+- **Max 3 levels of nesting.** If you have `if > for > if`, extract the inner logic into a named function.
 
 ### Error Handling
 - Never swallow errors silently (`catch (e) {}`).
