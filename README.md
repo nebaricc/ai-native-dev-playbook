@@ -155,6 +155,18 @@ See [Plugins & Skills Ecosystem](docs/plugins-and-skills.md) for installation in
 
 ## How to Apply This to Your Repo
 
+### Bootstrap or refresh from this repo (central template)
+
+To **pull** the latest templates into an existing project (or a new repo), use the sync script from your **project root**:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nebaricc/ai-native-dev-playbook/main/scripts/sync-from-playbook.sh | bash
+```
+
+This copies `templates/CLAUDE.md`, `templates/.cursorrules`, `templates/.claude/`, `templates/.cursor/rules/`, and `specs/_TEMPLATE.md`. Run again anytime to refresh skills and rules; use `--skip-root` to avoid overwriting customized `CLAUDE.md` / `.cursorrules`.
+
+Full options (subtree, manual copy, forks): [docs/playbook-as-dependency.md](docs/playbook-as-dependency.md).
+
 ### Quick Start (30 minutes -- Phase 1 only)
 
 This gets you immediate improvement in AI output quality.
@@ -162,7 +174,10 @@ This gets you immediate improvement in AI output quality.
 **Step 1: Create your context files.**
 
 ```bash
-# Clone the playbook for templates
+# Option A: scripted copy (recommended)
+curl -fsSL https://raw.githubusercontent.com/nebaricc/ai-native-dev-playbook/main/scripts/sync-from-playbook.sh | bash
+
+# Option B: manual copy
 git clone https://github.com/nebaricc/ai-native-dev-playbook.git /tmp/playbook
 
 # Copy and customize
@@ -216,6 +231,7 @@ Each phase builds on the previous. Detailed implementation guides:
 | 4. Workflow Skills | [docs/phase-4-workflows.md](docs/phase-4-workflows.md) | 2-4 hours | AI follows your process |
 
 Additional deep dives:
+- [Using this playbook as a central template](docs/playbook-as-dependency.md) -- Sync script, subtree, updates over time
 - [Quick Rules Cheat Sheet](docs/quick-rules.md) -- Copy-paste agent rules for any project (start here)
 - [Plugins & Skills Ecosystem](docs/plugins-and-skills.md) -- Claude Code plugins, MCP servers, UI/UX design tools, image generation
 - [Multi-tool setup](docs/multi-tool-setup.md) -- Claude Code + Cursor + Copilot alignment
@@ -230,7 +246,10 @@ Additional deep dives:
 
 ```
 README.md                           # You are here
+scripts/
+  sync-from-playbook.sh             # Copy templates into another repo (bootstrap / refresh)
 docs/
+  playbook-as-dependency.md         # Central template: sync, subtree, updates
   quick-rules.md                    # Copy-paste agent rules cheat sheet (start here)
   plugins-and-skills.md             # Plugin ecosystem, MCP servers, design & image tools
   phase-1-context.md                # Full Phase 1 guide with code examples

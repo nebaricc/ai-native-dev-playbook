@@ -295,6 +295,8 @@ Copilot has more limited context handling than Claude Code or Cursor. It does no
 
 ### Keeping configs in sync
 
+To **bootstrap or refresh** multiple repositories from this playbook's `templates/` (sync script, subtree, or manual copy), see [playbook-as-dependency.md](playbook-as-dependency.md).
+
 CLAUDE.md is the source of truth. When you update a rule in CLAUDE.md, propagate it:
 
 | Source | Copies to |

@@ -1,5 +1,15 @@
 # Frequently Asked Questions
 
+## "Can I use this repo as a central template for all my projects?"
+
+Yes. There is no package manager install — you **copy** files from `templates/` into each repo and commit them. The easiest path:
+
+1. From any project root, run the sync script (see [playbook-as-dependency.md](playbook-as-dependency.md)) to copy `CLAUDE.md`, `.cursorrules`, `.claude/`, `.cursor/rules/`, and `specs/_TEMPLATE.md`.
+2. Customize `CLAUDE.md` and `.cursorrules` for that project's stack.
+3. Later, run the same script with `--skip-root` to refresh skills and rules without overwriting your customized root files.
+
+If you maintain a **fork** of this playbook, set `PLAYBOOK_URL` to your fork when running the script.
+
 ## "Do I need both CLAUDE.md and .cursorrules?"
 
 Yes. Claude Code reads CLAUDE.md. Cursor reads .cursorrules. They're different tools with different config formats. The simplest approach: make CLAUDE.md the source of truth and have .cursorrules contain one line: `Read and follow all instructions in CLAUDE.md in this repository.`
