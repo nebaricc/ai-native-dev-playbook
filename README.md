@@ -80,6 +80,8 @@ If your team uses multiple tools -- or if some team members can't access Claude 
 
 **Critical rule: `.cursorrules` must be comprehensive and standalone.** Don't just write "read CLAUDE.md" -- Cursor's config loading is fragile and won't reliably follow that reference. Duplicate the key standards: tech stack, git conventions, code style, testing rules, and the 10 agent behavior rules. Yes, this means maintaining two files. The alternative -- team members getting inconsistent AI behavior -- is worse.
 
+**Deterministic workflow (optional):** Copy `templates/.cursor/rules/agent-workflow.mdc` into `.cursor/rules/` with `alwaysApply: true` so every session follows the same phases (classify → plan → implement → validate → ship), aligned with harness-style tools such as [Archon](https://github.com/coleam00/archon). The same workflow is documented in `templates/CLAUDE.md` and `docs/quick-rules.md`.
+
 **File-scoped rules** give you context-aware guidance when editing specific file types:
 
 ```

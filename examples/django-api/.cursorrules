@@ -178,3 +178,7 @@ class TestProjectAPI:
 - Custom exceptions inherit from `APIException` with appropriate `status_code`.
 - Structured logging with `structlog`. Include request ID for tracing.
 - Unhandled exceptions return 500 with generic message (no stack trace in production).
+
+## Deterministic agent workflow
+
+Same phases every session: **classify** (bug/feature/refactor/chore/docs/investigation) → **context** (read CLAUDE.md + similar code) → **plan** (if 3+ files or cross-app) → **implement** → **validate** (ruff, black, mypy, pytest locally before push) → **review** (diff + test mapping) → **ship** (branch, commit, PR). Use a **dedicated branch** per task; use **separate git worktrees** for parallel agent runs. **Implement until green**; **review until done** on the same branch.

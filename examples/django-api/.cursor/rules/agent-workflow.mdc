@@ -1,0 +1,31 @@
+---
+description: Deterministic agent workflow — phases, isolation, validation loops
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Agent workflow (deterministic phases)
+
+Follow the same sequence every session unless the user explicitly narrows scope (e.g. "docs only").
+
+1. **Classify** — bug fix, feature, refactor, chore, docs, or investigation. If ambiguous, ask one short question before coding.
+2. **Context** — read this repo's `CLAUDE.md`, `.cursorrules`, and similar existing code before editing.
+3. **Plan** — for 3+ files or cross-package work: list steps, files, and risks; keep the plan visible until the PR is ready.
+4. **Implement** — small steps; use scripts and test runners for verify/build/test, not guesses.
+5. **Validate** — run type-check, lint, and tests locally before push; CI is not the first test run.
+6. **Review** — re-read the diff; every changed source file maps to a test or a justified exception.
+7. **Ship** — branch, commit, push, PR; follow the project's PR template and definition of done.
+
+## Isolation
+
+- Prefer **separate branches** or **git worktrees** for parallel tasks so worktrees do not conflict.
+- **One concern per PR** — no unrelated drive-by fixes bundled with a feature.
+
+## Artifacts
+
+- For non-trivial work, keep a short **plan** (session summary or `plan.md` if the team uses it) so implementation stays aligned with scope.
+
+## Loops
+
+- **Implement until green** — fix and re-run until tests pass; do not merge red.
+- **Review until done** — address feedback on the same branch before merge.

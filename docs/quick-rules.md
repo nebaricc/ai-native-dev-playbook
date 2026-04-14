@@ -120,6 +120,28 @@ After any AI writes tests, introduce a deliberate bug in the source and confirm 
 
 ---
 
+## Deterministic workflow (phases)
+
+Inspired by harness-style orchestration (e.g. [Archon](https://github.com/coleam00/archon)): **encode the sequence**, not just the coding rules. The model fills in the work at each step; the structure stays the same every time.
+
+| Phase | What to do |
+|-------|------------|
+| **Classify** | Bug, feature, refactor, chore, docs, or investigation. If unclear, ask one short question before coding. |
+| **Context** | Read this repo's `CLAUDE.md`, `.cursorrules`, and similar existing code before editing. |
+| **Plan** | For 3+ files or cross-package work: list steps, files, and risks; keep the plan until the PR is ready. |
+| **Implement** | Small steps; use scripts and test runners for verify/build/test. |
+| **Validate** | Run type-check, lint, and tests locally before push. CI is not the first check. |
+| **Review** | Re-read the diff; map every changed source file to a test or a justified exception. |
+| **Ship** | Branch, commit, push, PR; follow the project's PR template and definition of done. |
+
+**Isolation:** One branch per task. For parallel agent work, use **separate git worktrees** so runs do not conflict.
+
+**Artifacts:** For non-trivial work, keep a short **plan** (session summary or `plan.md` if the team uses it) so implementation does not drift from scope.
+
+**Loops:** **Implement until green** (fix and re-run until tests pass). **Review until done** (address feedback on the same branch before merge).
+
+---
+
 ## Agent Behavior Rules
 
 These 10 rules go in every context file. They are the behavioral contract between you and the AI:
