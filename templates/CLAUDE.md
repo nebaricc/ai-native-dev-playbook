@@ -23,6 +23,26 @@
 {PACKAGE_MANAGER} run format         # Format (Prettier)
 ```
 
+## Deterministic agent workflow
+
+Borrowed from harness-style agent orchestration: **fix the sequence**, let the model fill in the work at each step. Same phases every time reduces skipped tests and inconsistent PRs.
+
+| Phase | Do |
+|-------|-----|
+| **Classify** | Decide: bug, feature, refactor, chore, docs, or investigation. If the ask is ambiguous, ask one clarifying question before coding. |
+| **Context** | Read this file, skills, and similar code in the repo before editing. |
+| **Plan** | For 3+ files or cross-package changes: list steps, files, and risks; keep the plan in the session until the PR is up. |
+| **Implement** | Small steps; prefer scripts and test commands over guessing outcomes. |
+| **Validate** | Run type-check, lint, and tests locally before push. CI is a backstop, not the first check. |
+| **Review** | Re-read the diff; map every changed source file to a test or a short reason it cannot be tested. |
+| **Ship** | Branch, commit, push, open PR using the team template and definition of done. |
+
+**Isolation:** Use a **dedicated branch** per task. For parallel agent work, use **separate git worktrees** so runs do not overwrite each other.
+
+**Artifacts:** When investigation or planning matters, keep a short **plan** (session summary or `plan.md` if the team uses it) so implementation does not drift from agreed scope.
+
+**Loops:** **Implement until green** (fix and re-run tests until they pass). **Review until done** (address feedback on the same branch before merge).
+
 ## Git Conventions
 
 - **Commits**: Conventional Commits -- `type(scope): description`
@@ -140,6 +160,7 @@ When a CI failure, bug, or review finding reveals a pattern not yet covered by t
 
 ## Definition of Done
 
+- [ ] Task classified (bug vs feature vs refactor, etc.) and plan followed when 3+ files or cross-package
 - [ ] Code compiles (`{PACKAGE_MANAGER} run type-check`)
 - [ ] Lint passes (`{PACKAGE_MANAGER} run lint`)
 - [ ] Tests pass (`{PACKAGE_MANAGER} run test`)

@@ -27,6 +27,21 @@
 # {PACKAGE_MANAGER} run format         Format (Prettier)
 
 # ============================================================
+# DETERMINISTIC AGENT WORKFLOW (same phases every session)
+# ============================================================
+
+# Classify: bug, feature, refactor, chore, docs, or investigation. Ask one question if ambiguous.
+# Context: read CLAUDE.md and similar code before editing.
+# Plan: for 3+ files or cross-package work, list steps and files before coding.
+# Implement: small steps; use scripts and tests, not guesses.
+# Validate: type-check, lint, tests locally before push.
+# Review: map each changed source file to a test or justify exception.
+# Ship: branch, commit, push, PR with template + definition of done.
+# Isolation: one branch per task; use separate git worktrees for parallel agent runs.
+# Artifacts: keep a short plan for non-trivial work so scope does not drift.
+# Loops: implement until tests pass; address review feedback before merge.
+
+# ============================================================
 # GIT CONVENTIONS
 # ============================================================
 
@@ -144,6 +159,7 @@
 # DEFINITION OF DONE
 # ============================================================
 
+# - Task classified and plan followed when 3+ files or cross-package
 # - Code compiles ({PACKAGE_MANAGER} run type-check)
 # - Lint passes ({PACKAGE_MANAGER} run lint)
 # - Tests pass ({PACKAGE_MANAGER} run test)

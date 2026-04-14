@@ -126,3 +126,7 @@ Imports should follow this order, separated by blank lines:
 5. Type-only imports (`import type { ... }`)
 
 ESLint enforces this via `eslint-plugin-import` with the project configuration.
+
+## Deterministic agent workflow
+
+Same phases every session: **classify** (bug/feature/refactor/chore/docs/investigation) → **context** (read CLAUDE.md + similar code) → **plan** (if 3+ files or cross-package) → **implement** → **validate** (pnpm typecheck, lint, test locally before push) → **review** (diff + test mapping) → **ship** (branch, commit, PR). Use a **dedicated branch** per task; use **separate git worktrees** for parallel agent runs. **Implement until green**; **review until done** on the same branch.

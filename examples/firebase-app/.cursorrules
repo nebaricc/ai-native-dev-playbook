@@ -132,3 +132,7 @@ export const onSignalCreated = onDocumentCreated(
 - Web app: error boundaries per route segment with user-friendly messages.
 - Structured logging: `functions.logger.info()` with context fields.
 - Bot: catch errors, log context, send user-facing embed with "something went wrong" message.
+
+## Deterministic agent workflow
+
+Same phases every session: **classify** (bug/feature/refactor/chore/docs/investigation) → **context** (read CLAUDE.md + similar code) → **plan** (if 3+ files or cross-workspace) → **implement** → **validate** (npm run typecheck, lint, test locally before push) → **review** (diff + test mapping) → **ship** (branch, commit, PR). Use a **dedicated branch** per task; use **separate git worktrees** for parallel agent runs. **Implement until green**; **review until done** on the same branch.
