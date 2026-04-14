@@ -8,6 +8,8 @@ Yes. There is no package manager install — you **copy** files from `templates/
 2. Customize `CLAUDE.md` and `.cursorrules` for that project's stack.
 3. Later, run the same script with `--skip-root` to refresh skills and rules without overwriting your customized root files.
 
+To add **only** Claude Code skills (`.claude/skills/`) and leave everything else alone, use `--skills-only` on the sync script. See [playbook-as-dependency.md](playbook-as-dependency.md).
+
 If you maintain a **fork** of this playbook, set `PLAYBOOK_URL` to your fork when running the script.
 
 ## "Do I need both CLAUDE.md and .cursorrules?"

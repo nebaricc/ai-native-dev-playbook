@@ -11,10 +11,11 @@
 #   PLAYBOOK_REF   Branch or tag (default: main)
 #
 # Flags:
-#   --dry-run      Print actions only
-#   --skip-root    Do not overwrite CLAUDE.md or .cursorrules (update skills/rules only)
-#   --with-ci      Also copy templates/.github/workflows/*.yml into .github/workflows/
-#   -h, --help     Show help
+#   --dry-run       Print actions only
+#   --skip-root     Do not overwrite CLAUDE.md or .cursorrules (update skills/rules only)
+#   --skills-only   Copy only templates/.claude/skills/ -> ./.claude/skills/ (smallest pull)
+#   --with-ci       Also copy templates/.github/workflows/*.yml into .github/workflows/
+#   -h, --help      Show help
 
 set -euo pipefail
 
@@ -22,12 +23,14 @@ PLAYBOOK_URL="${PLAYBOOK_URL:-https://github.com/nebaricc/ai-native-dev-playbook
 PLAYBOOK_REF="${PLAYBOOK_REF:-main}"
 DRY_RUN=0
 SKIP_ROOT=0
+SKILLS_ONLY=0
 WITH_CI=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --skip-root) SKIP_ROOT=1 ;;
+    --skills-only) SKILLS_ONLY=1 ;;
     --with-ci) WITH_CI=1 ;;
     -h|--help)
       grep '^#' "$0" | sed 's/^# \{0,1\}//' | head -40
@@ -40,6 +43,10 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+
+if [[ $SKILLS_ONLY -eq 1 ]] && [[ $SKIP_ROOT -eq 1 ]]; then
+  echo "Note: --skills-only already skips root files; --skip-root is redundant." >&2
+fi
 
 if [[ ! -d .git ]]; then
   echo "Error: run this from the root of a git repository (no .git directory here)." >&2
@@ -99,6 +106,13 @@ run_rsync_dir() {
     echo "Synced (cp): $dest/"
   fi
 }
+
+if [[ $SKILLS_ONLY -eq 1 ]]; then
+  run_rsync_dir "$TEMPLATES/.claude/skills" "./.claude/skills"
+  echo ""
+  echo "Done. Only .claude/skills/ was synced. Ensure CLAUDE.md tells Claude to load skills when relevant."
+  exit 0
+fi
 
 if [[ $SKIP_ROOT -eq 0 ]]; then
   run_cp "$TEMPLATES/CLAUDE.md" "./CLAUDE.md"

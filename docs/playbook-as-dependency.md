@@ -18,6 +18,8 @@ The authoritative copies live under `templates/` in this repository:
 
 Optional: `templates/.github/workflows/` → `./.github/workflows/` (use `--with-ci` in the script below).
 
+**Skills only:** To pull **just** the Claude Code skill packs (security, quality, compliance, etc.) and nothing else — no `CLAUDE.md`, no Cursor rules, no commands — use `--skills-only`. That copies only `templates/.claude/skills/` → `./.claude/skills/`. You still need a line in `CLAUDE.md` (or your habits) that tells Claude when to load each skill; the template already references security/compliance in the agent section.
+
 **Not synced:** `examples/` (illustrations only). Pick an example as a starting point if you want a full reference app, but day-to-day projects use `templates/` plus your own stack details.
 
 ---
@@ -50,9 +52,16 @@ Flags:
 |------|---------|
 | `--dry-run` | Show what would be copied |
 | `--skip-root` | Do **not** overwrite `CLAUDE.md` or `.cursorrules` (only refresh `.claude/`, `.cursor/rules/`, `specs/`) |
+| `--skills-only` | Copy **only** `.claude/skills/` (smallest pull; good for existing repos that already have context files) |
 | `--with-ci` | Also copy workflow templates into `.github/workflows/` |
 
-Then customize `CLAUDE.md` and `.cursorrules` for your stack and commit.
+**Skills-only example:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nebaricc/ai-native-dev-playbook/main/scripts/sync-from-playbook.sh | bash -s -- --skills-only
+```
+
+Then customize `CLAUDE.md` and `.cursorrules` for your stack and commit (unless you used `--skills-only`, in which case commit `.claude/skills/` and ensure your `CLAUDE.md` references loading skills when appropriate).
 
 ---
 

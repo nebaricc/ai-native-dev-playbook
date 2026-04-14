@@ -163,7 +163,7 @@ To **pull** the latest templates into an existing project (or a new repo), use t
 curl -fsSL https://raw.githubusercontent.com/nebaricc/ai-native-dev-playbook/main/scripts/sync-from-playbook.sh | bash
 ```
 
-This copies `templates/CLAUDE.md`, `templates/.cursorrules`, `templates/.claude/`, `templates/.cursor/rules/`, and `specs/_TEMPLATE.md`. Run again anytime to refresh skills and rules; use `--skip-root` to avoid overwriting customized `CLAUDE.md` / `.cursorrules`.
+This copies `templates/CLAUDE.md`, `templates/.cursorrules`, `templates/.claude/`, `templates/.cursor/rules/`, and `specs/_TEMPLATE.md`. Run again anytime to refresh skills and rules; use `--skip-root` to avoid overwriting customized `CLAUDE.md` / `.cursorrules`. Use `--skills-only` to copy **only** `.claude/skills/` (Claude Code skill packs, nothing else).
 
 Full options (subtree, manual copy, forks): [docs/playbook-as-dependency.md](docs/playbook-as-dependency.md).
 
