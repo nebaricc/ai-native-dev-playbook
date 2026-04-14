@@ -18,11 +18,11 @@ Yes. Claude Code reads CLAUDE.md. Cursor reads .cursorrules. They're different t
 
 ## "What if my team uses different AI tools?"
 
-That's fine. All config files live in the repo and each tool reads its own. A team where one person uses Claude Code and another uses Cursor will both get project-aware behavior because both CLAUDE.md and .cursorrules are committed. See [tool-setup.md](tool-setup.md) for the full list.
+That's fine. All config files live in the repo and each tool reads its own. A team where one person uses Claude Code and another uses Cursor will both get project-aware behavior because both CLAUDE.md and .cursorrules are committed. See [multi-tool-setup.md](multi-tool-setup.md) for the full list.
 
 ## "How do I enforce these rules?"
 
-CI gates, not the honor system. AI tools follow context files most of the time, but not always. Phase 2 adds automated checks: lint, type checking, test coverage, change budget limits, and AI-powered PR review. If the AI skips a test or changes too many files, the build fails. See [phases.md](phases.md#phase-2-ci-enforcement).
+CI gates, not the honor system. AI tools follow context files most of the time, but not always. Phase 2 adds automated checks: lint, type checking, test coverage, change budget limits, and AI-powered PR review. If the AI skips a test or changes too many files, the build fails. See [phase-2-ci.md](phase-2-ci.md).
 
 ## "What about GitHub Copilot?"
 
@@ -66,7 +66,7 @@ Encode these in your CI pipeline as a PR check. The check doesn't block the merg
 
 ## "Can I adopt this incrementally?"
 
-Yes, and you should. Start with Phase 1 (context files) and get immediate value. You don't need all four phases on day one. Most teams see the biggest ROI from Phase 1 alone -- AI output quality improves dramatically when the tool knows your patterns. Add phases as you have bandwidth. See [phases.md](phases.md) for time estimates.
+Yes, and you should. Start with Phase 1 (context files) and get immediate value. You don't need all four phases on day one. Most teams see the biggest ROI from Phase 1 alone -- AI output quality improves dramatically when the tool knows your patterns. Add phases as you have bandwidth. See the phase guides linked from [README.md](../README.md#full-setup-1-2-days----all-4-phases) for time estimates.
 
 ## "What if I'm joining an existing project that has none of this?"
 
